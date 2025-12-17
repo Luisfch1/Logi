@@ -1,0 +1,1707 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#0f172a" />
+
+  <title>Registro Fotográfico v6</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="favicon.png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+  <!-- JSZip (ZIP) -->
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <!-- DOCX (Word) -->
+  <script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
+
+  <style>
+    *{box-sizing:border-box;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial}
+    body{margin:0;padding:14px;background:#0b1220;color:#e5e7eb}
+    .wrap{max-width:900px;margin:0 auto;display:grid;gap:12px}
+    h1{font-size:1.15rem;margin:4px 0 0;text-align:center}
+    .card{background:#050a14;border:1px solid #1f2937;border-radius:14px;padding:12px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    label{font-size:.8rem;color:#9ca3af;display:block;margin-bottom:4px}
+    input[type="date"], select, textarea{
+      width:100%;padding:10px;border-radius:12px;border:1px solid #334155;
+      background:#0b1220;color:#e5e7eb;font-size:.95rem
+    }
+    textarea{min-height:44px;resize:vertical}
+    input[type="text"]{
+      width:100%;padding:10px;border-radius:12px;border:1px solid #334155;
+      background:#0b1220;color:#e5e7eb;font-size:.95rem
+    }
+    .btn{
+      border:0;border-radius:999px;padding:10px 14px;font-weight:700;cursor:pointer;
+      display:inline-flex;align-items:center;gap:8px;font-size:.92rem;
+      user-select:none;-webkit-user-select:none;touch-action:manipulation;
+    }
+    .btn-primary{background:linear-gradient(90deg,#22c55e,#a3e635);color:#052e1a}
+    .btn-secondary{background:#0b1220;color:#e5e7eb;border:1px solid #334155}
+    .btn-danger{background:#ef4444;color:#fee2e2}
+    .btn-disabled{opacity:.45;cursor:not-allowed}
+    .muted{color:#9ca3af;font-size:.8rem}
+    .pill{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;
+      padding:4px 10px;border-radius:999px;background:linear-gradient(90deg,#22d3ee,#a855f7);
+      color:#050a14;font-weight:900
+    }
+    .chip-done{
+      font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;
+      padding:4px 10px;border-radius:999px;background:#34d399;color:#052e1a;font-weight:900
+    }
+    .status{font-size:.85rem;color:#cbd5e1}
+    .ok{color:#34d399}
+
+    .list{display:grid;gap:10px;margin-top:10px}
+    .item{border:1px solid #1f2937;border-radius:14px;padding:10px;background:#0b1220}
+    .item.done{border-color:#34d39955}
+    .itemTop{display:flex;gap:10px;align-items:flex-start}
+    .thumb{width:72px;height:72px;border-radius:12px;object-fit:cover;border:1px solid #1f2937;cursor:pointer}
+    .grow{flex:1}
+    .mini{font-size:.78rem;color:#9ca3af;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .right{margin-left:auto;display:flex;gap:8px;align-items:center}
+    .smallBtn{padding:8px 10px;font-size:.85rem}
+
+    .tabs{display:flex;gap:8px;align-items:center}
+    .tab{
+      border:1px solid #334155;background:#0b1220;color:#e5e7eb;
+      border-radius:999px;padding:8px 12px;font-weight:800;cursor:pointer;font-size:.88rem
+    }
+    .tab.active{background:linear-gradient(90deg,#22d3ee,#a855f7);color:#050a14;border-color:transparent}
+
+    .galleryWrap{
+      margin-top:10px;
+      max-height:70vh;
+      overflow:auto;
+      border:1px solid #1f2937;
+      border-radius:14px;
+      background:#0b1220;
+    }
+    .dayHeader{
+      position:sticky; top:0;
+      background:rgba(5,10,20,.92);
+      backdrop-filter: blur(6px);
+      border-bottom:1px solid #1f2937;
+      padding:10px 12px;
+      z-index:5;
+      display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+    }
+    .dayTitle{font-weight:900}
+    .dayMeta{color:#9ca3af;font-size:.8rem}
+    .gridThumbs{
+      display:grid;
+      grid-template-columns:repeat(3, minmax(0,1fr));
+      gap:8px;
+      padding:10px 12px 14px;
+    }
+    @media (min-width: 768px){
+      .gridThumbs{grid-template-columns:repeat(6, minmax(0,1fr));}
+    }
+    .gThumbBox{position:relative}
+    .gThumb{
+      width:100%;
+      aspect-ratio:1/1;
+      object-fit:cover;
+      border-radius:12px;
+      border:1px solid #1f2937;
+      cursor:pointer;
+      display:block;
+    }
+    .badge{
+      position:absolute;
+      left:8px; top:8px;
+      padding:3px 8px;
+      border-radius:999px;
+      font-size:.68rem;
+      font-weight:900;
+      background:rgba(15,23,42,.8);
+      border:1px solid rgba(203,213,225,.25);
+      color:#e5e7eb;
+    }
+    .badgeDone{
+      background:rgba(52,211,153,.9);
+      color:#052e1a;border-color:transparent;
+    }
+    .badgeShare{ right:8px; left:auto; }
+
+    .modal{
+      position:fixed; inset:0;
+      background:rgba(2,6,23,.92);
+      display:none; align-items:center; justify-content:center;
+      z-index:50; padding:14px;
+    }
+    .modal.open{display:flex}
+    .modalCard{
+      width:min(980px, 96vw);
+      background:#050a14;
+      border:1px solid #1f2937;
+      border-radius:16px;
+      box-shadow:0 20px 60px rgba(0,0,0,.6);
+      overflow:hidden;
+    }
+    .modalBody{display:grid;gap:0}
+    @media (min-width: 900px){
+      .modalBody{grid-template-columns: 1.25fr .75fr}
+    }
+    .modalImg{
+      width:100%;
+      max-height:70vh;
+      object-fit:contain;
+      background:#0b1220;
+    }
+    .modalSide{
+      padding:12px;
+      display:grid;
+      gap:10px;
+      align-content:start;
+      background:#050a14;
+    }
+    .modalTitle{font-weight:900}
+    .modalCloseRow{display:flex;justify-content:space-between;align-items:center;gap:10px}
+
+    /* ✅ Android/PWA: NO usar display:none en file inputs */
+    .hiddenFileInput{
+      position: fixed;
+      left: -9999px;
+      top: -9999px;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* Barra de actualización */
+    .updateBar{
+      display:none;
+      margin-top:10px;
+      border:1px solid rgba(163,230,53,.35);
+      background:linear-gradient(90deg, rgba(34,197,94,.15), rgba(163,230,53,.08));
+      padding:10px 12px;
+      border-radius:14px;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .updateBar.show{display:flex}
+    .glowBtn{
+      box-shadow: 0 0 0 rgba(163,230,53,0);
+      animation: glow 1.2s ease-in-out infinite;
+    }
+    @keyframes glow{
+      0%{ box-shadow: 0 0 0 rgba(163,230,53,0); }
+      50%{ box-shadow: 0 0 22px rgba(163,230,53,.35); }
+      100%{ box-shadow: 0 0 0 rgba(163,230,53,0); }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <h1>Registro Fotográfico</h1>
+
+    <div class="card">
+      <div class="row" style="justify-content:space-between;">
+        <div class="row">
+          <span class="pill">control</span>
+          <div class="muted">Guardado local (IndexedDB) + export ZIP (incluye DOCX).</div>
+        </div>
+
+        <div class="row" style="gap:8px">
+          <button class="btn btn-secondary smallBtn" id="btnUpdateApp" style="display:none">🔄 Actualizar app</button>
+          <button class="btn btn-secondary smallBtn" id="btnRepairApp">🧰 Reparar</button>
+          <div id="status" class="status"></div>
+        </div>
+      </div>
+
+      <!-- Barra de update -->
+      <div class="updateBar" id="updateBar">
+        <div class="muted">
+          Hay una versión nueva lista. (Tip: si te da miedo perder algo, exporta HOY antes de actualizar.)
+        </div>
+        <button class="btn btn-primary smallBtn glowBtn" id="btnUpdateNow">✅ Instalar actualización</button>
+      </div>
+
+      <div class="row" style="margin-top:10px;justify-content:space-between;">
+        <div class="tabs">
+          <button class="tab active" id="tabCaptura">Captura</button>
+          <button class="tab" id="tabGaleria">Galería</button>
+        </div>
+        <div class="muted" id="rangeInfo"></div>
+      </div>
+
+      <div class="row" style="margin-top:10px;">
+        <div style="flex:1;min-width:220px">
+          <label for="fecha">Fecha</label>
+          <input type="date" id="fecha" />
+        </div>
+
+        <div style="flex:1;min-width:220px">
+          <label for="proyecto">Proyecto (opcional)</label>
+          <input type="text" id="proyecto" placeholder="PTAR Cumaral, Malecón, etc." />
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:10px;">
+        <input id="camInput" class="hiddenFileInput" type="file" accept="image/*" capture="environment" multiple />
+        <button class="btn btn-primary" id="btnTomarFoto">📷 Tomar/Seleccionar fotos</button>
+        <button class="btn btn-secondary" id="btnLimpiarDia">🧹 Limpiar SOLO fecha actual</button>
+      </div>
+
+      <!-- LOGO (captura) -->
+      <div class="row" style="margin-top:10px;">
+        <input id="logoInput" class="hiddenFileInput" type="file" accept="image/*" />
+        <button class="btn btn-secondary" id="btnCargarLogo">🖼️ Cargar logo</button>
+        <button class="btn btn-secondary" id="btnQuitarLogo" style="display:none">🗑️ Quitar logo</button>
+
+        <label style="display:flex;align-items:center;gap:10px;margin:0">
+          <input type="checkbox" id="logoEnabled" />
+          <span class="muted">Aplicar logo a nuevas fotos (captura)</span>
+        </label>
+
+        <select id="logoCorner" style="width:auto">
+          <option value="br">Logo: inferior derecha</option>
+          <option value="bl">Logo: inferior izquierda</option>
+          <option value="tr">Logo: superior derecha</option>
+          <option value="tl">Logo: superior izquierda</option>
+        </select>
+
+        <img id="logoPreview" alt="Logo"
+             style="height:34px;width:auto;border-radius:10px;border:1px solid #1f2937;display:none"/>
+      </div>
+
+      <div id="capturaView">
+        <div class="muted" style="margin-top:8px">
+          Captura del día: escribe la descripción, marca ✅ Listo y si quieres 📤 WhatsApp (solo imagen).
+        </div>
+
+        <!-- ✅ Opciones WhatsApp -->
+        <div class="row" style="margin-top:10px;">
+          <label style="display:flex;align-items:center;gap:10px;margin:0">
+            <input type="checkbox" id="waAddLogo" checked />
+            <span class="muted">WhatsApp: incluir logo (si hay logo cargado)</span>
+          </label>
+
+          <label style="display:flex;align-items:center;gap:10px;margin:0">
+            <input type="checkbox" id="waAddStamp" />
+            <span class="muted">WhatsApp: incluir fecha/hora</span>
+          </label>
+        </div>
+        <div class="muted" style="margin-top:6px">
+          Nota: si una foto ya quedó con logo en la captura, no se puede “quitar” al enviar.
+        </div>
+
+        <div id="lista" class="list"></div>
+      </div>
+
+      <div id="galeriaView" style="display:none">
+        <div class="muted" style="margin-top:8px">
+          Miniaturas por día. El encabezado del día se queda pegado arriba al hacer scroll.
+        </div>
+        <div id="galleryWrap" class="galleryWrap"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="row" style="justify-content:space-between;">
+        <span class="pill">exportar</span>
+        <div class="muted">ZIP incluye fotos+txt+csv+xls+DOCX registro fotográfico.</div>
+      </div>
+
+      <div class="row" style="margin-top:10px;">
+        <div style="flex:1;min-width:180px">
+          <label for="modoExport">Modo</label>
+          <select id="modoExport">
+            <option value="dia">Día</option>
+            <option value="mes">Mes</option>
+            <option value="rango">Rango</option>
+          </select>
+        </div>
+
+        <div style="flex:1;min-width:180px">
+          <label for="desde">Desde</label>
+          <input type="date" id="desde" />
+        </div>
+
+        <div style="flex:1;min-width:180px">
+          <label for="hasta">Hasta</label>
+          <input type="date" id="hasta" />
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:10px;">
+        <label style="display:flex;align-items:center;gap:10px;margin:0">
+          <input type="checkbox" id="useTimeNames" />
+          <span class="muted">Nombrar fotos con hora (opcional)</span>
+        </label>
+
+        <label style="display:flex;align-items:center;gap:10px;margin:0">
+          <input type="checkbox" id="onlyDone" />
+          <span class="muted">Solo exportar LISTAS</span>
+        </label>
+
+        <label style="display:flex;align-items:center;gap:10px;margin:0">
+          <span class="muted">Ajuste foto en DOCX</span>
+          <select id="docxFit" style="width:auto">
+            <option value="stretch">Estirar (deforma)</option>
+            <option value="contain">Sin deformar (bordes blancos)</option>
+            <option value="cover">Recortar (rellenar)</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="row" style="margin-top:10px;">
+        <label style="display:flex;align-items:center;gap:10px;margin:0">
+          <input type="checkbox" id="exportLogo" />
+          <span class="muted">En exportación: incluir logo (si hay logo cargado)</span>
+        </label>
+
+        <label style="display:flex;align-items:center;gap:10px;margin:0">
+          <input type="checkbox" id="exportStampDT" />
+          <span class="muted">En exportación: escribir fecha y hora sobre la foto</span>
+        </label>
+      </div>
+
+      <div class="row" style="margin-top:10px;">
+        <button class="btn btn-primary" id="btnZip">⬇️ Descargar ZIP</button>
+        <button class="btn btn-secondary" id="btnZipHoy">⬇️ Exportar HOY</button>
+        <button class="btn btn-danger" id="btnBorrarTodo">🗑️ Borrar TODO</button>
+        <div id="zipInfo" class="muted"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal" id="modal">
+    <div class="modalCard">
+      <div class="modalBody">
+        <img id="modalImg" class="modalImg" alt="Foto" />
+        <div class="modalSide">
+          <div class="modalCloseRow">
+            <div>
+              <div class="modalTitle" id="modalTitle"></div>
+              <div class="muted" id="modalMeta"></div>
+            </div>
+            <button class="btn btn-secondary smallBtn" id="btnModalClose">✖</button>
+          </div>
+
+          <div>
+            <label>Descripción</label>
+            <textarea id="modalDesc" placeholder="Descripción..."></textarea>
+          </div>
+
+          <div class="row">
+            <button class="btn btn-secondary smallBtn" id="btnModalDone">✅ Listo</button>
+            <button class="btn btn-secondary smallBtn" id="btnModalShare">📤 WhatsApp</button>
+            <button class="btn btn-danger smallBtn" id="btnModalDelete">🗑️</button>
+          </div>
+
+          <div class="muted">
+            WhatsApp: se comparte <b>solo la imagen</b>. TXT/Excel/DOCX van dentro del ZIP.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+function $(id){ return document.getElementById(id); }
+
+/* ===========================
+   Service Worker (PWA) + Update UI
+=========================== */
+let waitingSW = null;
+
+function showUpdateUI(){
+  $("updateBar").classList.add("show");
+  $("btnUpdateApp").style.display = "inline-flex";
+  $("btnUpdateApp").classList.add("glowBtn");
+}
+
+async function triggerSWUpdate(){
+  try{
+    if (waitingSW){
+      waitingSW.postMessage({ type: "SKIP_WAITING" });
+    } else {
+      const reg = await navigator.serviceWorker.getRegistration();
+      if (reg) await reg.update();
+    }
+  }catch{}
+}
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", async () => {
+    try{
+      const reg = await navigator.serviceWorker.register("./sw.js");
+
+      if (reg.waiting){
+        waitingSW = reg.waiting;
+        showUpdateUI();
+      }
+
+      reg.addEventListener("updatefound", () => {
+        const newSW = reg.installing;
+        if (!newSW) return;
+
+        newSW.addEventListener("statechange", () => {
+          if (newSW.state === "installed" && navigator.serviceWorker.controller){
+            waitingSW = reg.waiting;
+            showUpdateUI();
+          }
+        });
+      });
+
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        window.location.reload();
+      });
+
+    }catch(e){}
+  });
+}
+
+$("btnUpdateApp").onclick = triggerSWUpdate;
+$("btnUpdateNow").onclick = triggerSWUpdate;
+
+/* ===========================
+   🧰 Reparar app (NO borra fotos)
+=========================== */
+async function repairApp(){
+  try{
+    if ("serviceWorker" in navigator){
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r => r.unregister()));
+    }
+    if (window.caches){
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+    }
+  }catch{}
+  const base = location.origin + location.pathname;
+  location.replace(base + "?r=" + Date.now());
+}
+$("btnRepairApp").onclick = repairApp;
+
+/* ===========================
+   IndexedDB
+=========================== */
+const DB_NAME = "rf_db_v1";
+const DB_STORE = "items";
+
+function openDB(){
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      const store = db.createObjectStore(DB_STORE, { keyPath: "id" });
+      store.createIndex("byDate", "fecha");
+      store.createIndex("byCreated", "createdAt");
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function dbPut(item){
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(DB_STORE, "readwrite");
+    tx.objectStore(DB_STORE).put(item);
+    tx.oncomplete = () => resolve(true);
+    tx.onerror = () => reject(tx.error);
+  });
+}
+async function dbGetAll(){
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(DB_STORE, "readonly");
+    const req = tx.objectStore(DB_STORE).getAll();
+    req.onsuccess = () => resolve(req.result || []);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function dbDelete(id){
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(DB_STORE, "readwrite");
+    tx.objectStore(DB_STORE).delete(id);
+    tx.oncomplete = () => resolve(true);
+    tx.onerror = () => reject(tx.error);
+  });
+}
+async function dbClear(){
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(DB_STORE, "readwrite");
+    tx.objectStore(DB_STORE).clear();
+    tx.oncomplete = () => resolve(true);
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+/* ===========================
+   Utilidades
+=========================== */
+const fechaInput = $("fecha");
+const proyectoInput = $("proyecto");
+const camInput = $("camInput");
+
+const lista = $("lista");
+const statusEl = $("status");
+const rangeInfo = $("rangeInfo");
+const zipInfo = $("zipInfo");
+
+function hoyISO(){ return new Date().toISOString().slice(0,10); }
+function ymdToNum(ymd){ return Number((ymd || "0000-00-00").replaceAll("-","")); }
+function pad2(n){ return String(n).padStart(2,"0"); }
+
+function sanitizeName(s){
+  return (s || "")
+    .trim()
+    .replace(/[\/:*?"<>|]/g,"")
+    .replace(/\s+/g,"_")
+    .slice(0,60) || "Proyecto";
+}
+
+function fmtBytes(bytes){
+  if (bytes < 1024) return bytes + " B";
+  const kb = bytes/1024;
+  if (kb < 1024) return kb.toFixed(1) + " KB";
+  const mb = kb/1024;
+  return mb.toFixed(1) + " MB";
+}
+
+function filenameForItem(it, idxWithinDay, useTime){
+  if (!useTime){
+    return String(idxWithinDay).padStart(3,"0") + ".jpg";
+  }
+  const d = new Date(it.createdAt || Date.now());
+  const hh = pad2(d.getHours());
+  const mm = pad2(d.getMinutes());
+  const ss = pad2(d.getSeconds());
+  const suf = pad2(idxWithinDay);
+  return `${hh}${mm}${ss}_${suf}.jpg`;
+}
+
+function formatDateLongES(iso){
+  try{
+    const [y,m,d] = iso.split("-").map(Number);
+    const dt = new Date(y, m-1, d);
+    return new Intl.DateTimeFormat("es-CO", { day:"numeric", month:"long", year:"numeric" }).format(dt);
+  }catch{
+    return iso;
+  }
+}
+
+function formatStampDateTime(it){
+  const baseDate = it.fecha || "";
+  const dt = new Date(it.createdAt || Date.now());
+  const hh = pad2(dt.getHours());
+  const mm = pad2(dt.getMinutes());
+  return baseDate ? `${baseDate} ${hh}:${mm}` : `${hh}:${mm}`;
+}
+
+/* ===========================
+   URLs temporales
+=========================== */
+let activeUrls = [];
+function trackUrl(u){ activeUrls.push(u); return u; }
+function revokeActiveUrls(){
+  for (const u of activeUrls) {
+    try { URL.revokeObjectURL(u); } catch {}
+  }
+  activeUrls = [];
+}
+
+/* ===========================
+   Preferencias (DOCX fit)
+=========================== */
+function loadDocxFit(){
+  const v = localStorage.getItem("rf_docx_fit") || "stretch";
+  $("docxFit").value = v;
+}
+$("docxFit").onchange = () => localStorage.setItem("rf_docx_fit", $("docxFit").value);
+
+/* ===========================
+   LOGO
+=========================== */
+let logoDataUrl = null;
+let logoBitmap = null;
+
+async function dataUrlToBitmap(dataUrl){
+  try{
+    const res = await fetch(dataUrl);
+    const blob = await res.blob();
+    if (window.createImageBitmap) return await createImageBitmap(blob);
+  }catch{}
+  return await new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = dataUrl;
+  });
+}
+
+function syncLogoButtons(){
+  const has = !!logoDataUrl;
+  $("btnQuitarLogo").style.display = has ? "inline-flex" : "none";
+}
+
+async function loadLogoFromStorage(){
+  logoDataUrl = localStorage.getItem("rf_logo_dataurl");
+  const enabled = localStorage.getItem("rf_logo_enabled") === "1";
+  $("logoEnabled").checked = enabled;
+
+  if (logoDataUrl){
+    $("logoPreview").src = logoDataUrl;
+    $("logoPreview").style.display = "inline-block";
+    try { logoBitmap = await dataUrlToBitmap(logoDataUrl); } catch { logoBitmap = null; }
+  } else {
+    $("logoPreview").style.display = "none";
+    logoBitmap = null;
+  }
+  syncLogoButtons();
+}
+
+function loadLogoCorner(){
+  const v = localStorage.getItem("rf_logo_corner") || "br";
+  $("logoCorner").value = v;
+}
+$("logoCorner").onchange = () => localStorage.setItem("rf_logo_corner", $("logoCorner").value);
+
+$("btnCargarLogo").onclick = () => $("logoInput").click();
+
+$("logoInput").onchange = async () => {
+  const file = $("logoInput").files?.[0];
+  if (!file) return;
+
+  const dataUrl = await new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => resolve(fr.result);
+    fr.onerror = reject;
+    fr.readAsDataURL(file);
+  });
+
+  localStorage.setItem("rf_logo_dataurl", dataUrl);
+  logoDataUrl = dataUrl;
+
+  $("logoPreview").src = dataUrl;
+  $("logoPreview").style.display = "inline-block";
+
+  try {
+    logoBitmap = await dataUrlToBitmap(dataUrl);
+    syncLogoButtons();
+    alert("Logo cargado ✅");
+  } catch {
+    alert("No pude cargar el logo. Prueba con un PNG.");
+  } finally {
+    $("logoInput").value = "";
+  }
+};
+
+$("btnQuitarLogo").onclick = async () => {
+  if (!confirm("¿Quitar el logo cargado?")) return;
+  localStorage.removeItem("rf_logo_dataurl");
+  logoDataUrl = null;
+  logoBitmap = null;
+  $("logoPreview").src = "";
+  $("logoPreview").style.display = "none";
+  syncLogoButtons();
+  alert("Logo quitado ✅");
+};
+
+$("logoEnabled").onchange = () => localStorage.setItem("rf_logo_enabled", $("logoEnabled").checked ? "1" : "0");
+
+/* ===========================
+   Helpers esquina
+=========================== */
+function oppositeCorner(c){
+  if (c === "br") return "tl";
+  if (c === "tl") return "br";
+  if (c === "bl") return "tr";
+  if (c === "tr") return "bl";
+  return "bl";
+}
+
+/* ===========================
+   Compresión (captura)
+=========================== */
+function drawLogoAtCorner(ctx, W, H, corner, alpha=0.85){
+  if (!logoBitmap) return false;
+
+  const margin = Math.round(Math.min(W, H) * 0.02);
+  const targetW = Math.round(W * 0.18);
+
+  const lw = logoBitmap.width || logoBitmap.naturalWidth;
+  const lh = logoBitmap.height || logoBitmap.naturalHeight;
+  if (!lw || !lh) return false;
+
+  const s = targetW / lw;
+  const targetH = Math.round(lh * s);
+
+  let x = W - targetW - margin;
+  let y = H - targetH - margin;
+  if (corner === "bl") { x = margin; y = H - targetH - margin; }
+  if (corner === "tr") { x = W - targetW - margin; y = margin; }
+  if (corner === "tl") { x = margin; y = margin; }
+
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.drawImage(logoBitmap, x, y, targetW, targetH);
+  ctx.restore();
+
+  return true;
+}
+
+function drawStampAtCorner(ctx, W, H, text, corner){
+  const pad = Math.round(Math.min(W, H) * 0.02);
+  const fontSize = Math.max(18, Math.round(Math.min(W, H) * 0.035));
+
+  ctx.save();
+  ctx.font = `700 ${fontSize}px Calibri, Arial, sans-serif`;
+  ctx.textBaseline = "bottom";
+
+  const metrics = ctx.measureText(text);
+  const boxW = Math.round(metrics.width + pad * 1.4);
+  const boxH = Math.round(fontSize + pad * 1.2);
+
+  let x = pad;
+  let y = H - pad;
+  if (corner === "br") { x = W - pad; y = H - pad; }
+  if (corner === "tr") { x = W - pad; y = pad + boxH; }
+  if (corner === "tl") { x = pad; y = pad + boxH; }
+
+  let boxX, boxY;
+  if (corner === "bl"){
+    boxX = x - Math.round(pad*0.6);
+    boxY = y - boxH;
+  } else if (corner === "br"){
+    boxX = x - boxW + Math.round(pad*0.6);
+    boxY = y - boxH;
+  } else if (corner === "tr"){
+    boxX = x - boxW + Math.round(pad*0.6);
+    boxY = y - boxH;
+  } else {
+    boxX = x - Math.round(pad*0.6);
+    boxY = y - boxH;
+  }
+
+  ctx.fillStyle = "rgba(2, 6, 23, 0.55)";
+  ctx.fillRect(boxX, boxY, boxW, boxH);
+
+  ctx.fillStyle = "rgba(255,255,255,0.95)";
+  ctx.textAlign = (corner === "br" || corner === "tr") ? "right" : "left";
+  ctx.fillText(text, x, y - Math.round(pad*0.3));
+
+  ctx.restore();
+}
+
+async function compressImage(file, maxSide=1600, quality=0.82){
+  if (!file.type.startsWith("image/")) return { blob: file, hasLogo: false };
+
+  const img = new Image();
+  const url = URL.createObjectURL(file);
+
+  await new Promise((res, rej) => {
+    img.onload = () => res();
+    img.onerror = rej;
+    img.src = url;
+  });
+
+  const w = img.naturalWidth, h = img.naturalHeight;
+  const scale = Math.min(1, maxSide / Math.max(w,h));
+  const nw = Math.round(w * scale);
+  const nh = Math.round(h * scale);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = nw; canvas.height = nh;
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(img, 0, 0, nw, nh);
+
+  URL.revokeObjectURL(url);
+
+  const enabled = localStorage.getItem("rf_logo_enabled") === "1";
+  const corner = localStorage.getItem("rf_logo_corner") || "br";
+  const hadLogo = (enabled && logoBitmap) ? drawLogoAtCorner(ctx, nw, nh, corner, 0.85) : false;
+
+  const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", quality));
+  return { blob: blob || file, hasLogo: !!hadLogo };
+}
+
+/* ===========================
+   Overlays (logo + fecha/hora)
+=========================== */
+async function applyExportOverlaysToBlob(originalBlob, options){
+  const { addLogo, addStamp, stampText, avoidDoubleLogo } = options;
+
+  const bmp = await createImageBitmap(originalBlob);
+  const canvas = document.createElement("canvas");
+  canvas.width = bmp.width;
+  canvas.height = bmp.height;
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(bmp, 0, 0);
+
+  const logoCorner = localStorage.getItem("rf_logo_corner") || "br";
+
+  const willHaveLogo =
+    (addLogo && logoBitmap && !avoidDoubleLogo) ||
+    (avoidDoubleLogo === true);
+
+  if (addLogo && logoBitmap && !avoidDoubleLogo){
+    drawLogoAtCorner(ctx, canvas.width, canvas.height, logoCorner, 0.85);
+  }
+
+  if (addStamp && stampText){
+    const stampCorner = willHaveLogo ? oppositeCorner(logoCorner) : "bl";
+    drawStampAtCorner(ctx, canvas.width, canvas.height, stampText, stampCorner);
+  }
+
+  const out = await new Promise(res => canvas.toBlob(res, "image/jpeg", 0.9));
+  return out || originalBlob;
+}
+
+/* ===========================
+   Estado / Datos
+=========================== */
+let cache = [];
+let viewMode = "captura";
+
+function setStatus(){
+  const count = cache.length;
+  const doneCount = cache.filter(x => x.done).length;
+  const totalBytes = cache.reduce((a,i)=>a+(i.blob?.size||0),0);
+
+  let minDate = null, maxDate = null;
+  for (const it of cache){
+    if (!it.fecha) continue;
+    if (!minDate || it.fecha < minDate) minDate = it.fecha;
+    if (!maxDate || it.fecha > maxDate) maxDate = it.fecha;
+  }
+  rangeInfo.textContent = minDate ? `Rango: ${minDate} → ${maxDate}` : "Rango: —";
+
+  statusEl.innerHTML =
+    `<span class="${count? 'ok':''}">${count} foto(s)</span>` +
+    ` · <span class="muted">${doneCount} listas</span>` +
+    ` · <span class="muted">${fmtBytes(totalBytes)}</span>`;
+}
+
+function groupByDate(items){
+  const map = new Map();
+  for (const it of items){
+    const d = it.fecha || "Sin_fecha";
+    if (!map.has(d)) map.set(d, []);
+    map.get(d).push(it);
+  }
+  const dates = Array.from(map.keys()).sort((a,b)=> b.localeCompare(a));
+  return dates.map(d => {
+    const arr = map.get(d).slice().sort((x,y)=> (x.createdAt - y.createdAt));
+    return [d, arr];
+  });
+}
+
+/* ===========================
+   Render: Captura
+=========================== */
+function renderCaptura(){
+  lista.innerHTML = "";
+  setStatus();
+
+  const fecha = fechaInput.value || hoyISO();
+  const items = cache
+    .filter(x => x.fecha === fecha)
+    .sort((a,b)=> (a.done === b.done ? (a.createdAt - b.createdAt) : (a.done - b.done)));
+
+  if (!items.length){
+    lista.innerHTML = `<div class="muted">No hay fotos guardadas para ${fecha}.</div>`;
+    return;
+  }
+
+  items.forEach((item, idx) => {
+    const div = document.createElement("div");
+    div.className = "item" + (item.done ? " done" : "");
+
+    const thumbUrl = trackUrl(URL.createObjectURL(item.blob));
+    const shareDisabled = !item.done;
+
+    div.innerHTML = `
+      <div class="itemTop">
+        <img class="thumb" src="${thumbUrl}" data-open="${item.id}" alt="foto">
+        <div class="grow">
+          <div class="mini">
+            <span>#${idx+1} · ${item.fecha}</span>
+            ${item.proyecto ? `<span>· ${item.proyecto}</span>` : `<span>· —</span>`}
+            ${item.done ? `<span class="chip-done">LISTO</span>` : ``}
+          </div>
+
+          <label style="margin-top:6px">Descripción</label>
+          <textarea data-id="${item.id}" class="desc" ${item.done ? "disabled" : ""}>${item.descripcion || ""}</textarea>
+
+          <div class="row" style="margin-top:8px;justify-content:space-between;">
+            <div class="row">
+              <button class="btn btn-secondary smallBtn toggleDone" data-id="${item.id}">
+                ${item.done ? "✏️ Editar" : "✅ Listo"}
+              </button>
+
+              <button class="btn btn-secondary smallBtn shareOne ${shareDisabled ? "btn-disabled" : ""}" data-id="${item.id}" ${shareDisabled ? "disabled" : ""}>
+                📤 WhatsApp
+              </button>
+            </div>
+
+            <div class="right">
+              <button class="btn btn-danger smallBtn del" data-id="${item.id}">🗑️</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    lista.appendChild(div);
+  });
+
+  wireEventsCaptura();
+}
+
+function wireEventsCaptura(){
+  document.querySelectorAll("textarea.desc").forEach(t => {
+    t.oninput = async () => {
+      const id = Number(t.dataset.id);
+      const obj = cache.find(x => x.id === id);
+      if (!obj) return;
+      obj.descripcion = t.value;
+      await dbPut(obj);
+    };
+  });
+
+  document.querySelectorAll("button.del").forEach(b => {
+    b.onclick = async () => {
+      const id = Number(b.dataset.id);
+      if (!confirm("¿Eliminar esta foto?")) return;
+      await dbDelete(id);
+      cache = cache.filter(x => x.id !== id);
+      render();
+    };
+  });
+
+  document.querySelectorAll("button.toggleDone").forEach(b => {
+    b.onclick = async () => {
+      const id = Number(b.dataset.id);
+      const obj = cache.find(x => x.id === id);
+      if (!obj) return;
+      obj.done = !obj.done;
+      await dbPut(obj);
+      render();
+    };
+  });
+
+  document.querySelectorAll("button.shareOne").forEach(b => {
+    b.onclick = async () => {
+      const id = Number(b.dataset.id);
+      const obj = cache.find(x => x.id === id);
+      if (!obj) return;
+      await shareOnlyImage(obj);
+    };
+  });
+
+  document.querySelectorAll("img.thumb").forEach(img => {
+    img.onclick = () => openModal(Number(img.dataset.open));
+  });
+}
+
+/* ===========================
+   Render: Galería
+=========================== */
+function renderGaleria(){
+  setStatus();
+  const wrap = $("galleryWrap");
+  wrap.innerHTML = "";
+
+  const groups = groupByDate(cache);
+  if (!groups.length){
+    wrap.innerHTML = `<div style="padding:12px" class="muted">Aún no hay fotos guardadas.</div>`;
+    return;
+  }
+
+  for (const [date, items] of groups){
+    const day = document.createElement("div");
+    const doneCount = items.filter(x => x.done).length;
+    const bytes = items.reduce((a,i)=>a+(i.blob?.size||0),0);
+
+    day.innerHTML = `
+      <div class="dayHeader">
+        <div class="dayTitle">${date}</div>
+        <div class="dayMeta">· ${items.length} foto(s) · ${doneCount} listas · ${fmtBytes(bytes)}</div>
+      </div>
+      <div class="gridThumbs" data-day="${date}"></div>
+    `;
+    wrap.appendChild(day);
+
+    const grid = day.querySelector(".gridThumbs");
+    items.forEach(it => {
+      const box = document.createElement("div");
+      box.className = "gThumbBox";
+      const url = trackUrl(URL.createObjectURL(it.blob));
+      box.innerHTML = `
+        <img class="gThumb" src="${url}" data-open="${it.id}" alt="foto">
+        <div class="badge ${it.done ? "badgeDone" : ""}">${it.done ? "LISTO" : "PEND"}</div>
+        <div class="badge badgeShare">📤</div>
+      `;
+      grid.appendChild(box);
+    });
+  }
+
+  wrap.querySelectorAll("img.gThumb").forEach(img => {
+    img.onclick = () => openModal(Number(img.dataset.open));
+  });
+}
+
+/* ===========================
+   Modal
+=========================== */
+let modalId = null;
+
+function openModal(id){
+  const it = cache.find(x => x.id === id);
+  if (!it) return;
+
+  modalId = id;
+  $("modal").classList.add("open");
+
+  const url = trackUrl(URL.createObjectURL(it.blob));
+  $("modalImg").src = url;
+
+  $("modalTitle").textContent = it.proyecto ? it.proyecto : "Foto";
+  $("modalMeta").textContent = `${it.fecha} · ${it.done ? "LISTA" : "PENDIENTE"}`;
+
+  $("modalDesc").value = it.descripcion || "";
+  $("modalDesc").disabled = !!it.done;
+
+  $("btnModalDone").textContent = it.done ? "✏️ Editar" : "✅ Listo";
+  $("btnModalShare").disabled = !it.done;
+  $("btnModalShare").classList.toggle("btn-disabled", !it.done);
+}
+
+function closeModal(){
+  $("modal").classList.remove("open");
+  $("modalImg").src = "";
+  modalId = null;
+}
+
+$("btnModalClose").onclick = closeModal;
+$("modal").addEventListener("click", (e) => { if (e.target.id === "modal") closeModal(); });
+
+$("modalDesc").oninput = async () => {
+  if (modalId == null) return;
+  const it = cache.find(x => x.id === modalId);
+  if (!it || it.done) return;
+  it.descripcion = $("modalDesc").value;
+  await dbPut(it);
+};
+
+$("btnModalDone").onclick = async () => {
+  if (modalId == null) return;
+  const it = cache.find(x => x.id === modalId);
+  if (!it) return;
+  it.done = !it.done;
+  await dbPut(it);
+  render();
+  openModal(it.id);
+};
+
+$("btnModalDelete").onclick = async () => {
+  if (modalId == null) return;
+  const it = cache.find(x => x.id === modalId);
+  if (!it) return;
+  if (!confirm("¿Eliminar esta foto?")) return;
+  await dbDelete(it.id);
+  cache = cache.filter(x => x.id !== it.id);
+  closeModal();
+  render();
+};
+
+$("btnModalShare").onclick = async () => {
+  if (modalId == null) return;
+  const it = cache.find(x => x.id === modalId);
+  if (!it) return;
+  await shareOnlyImage(it);
+};
+
+/* ===========================
+   WhatsApp (solo imagen)
+=========================== */
+async function shareOnlyImage(it){
+  const safeProject = sanitizeName(it.proyecto || "Foto");
+  const name = `${it.fecha}_${safeProject}.jpg`;
+
+  let blobToShare = it.blob;
+
+  const wantLogo = !!$("waAddLogo")?.checked;
+  const wantStamp = !!$("waAddStamp")?.checked;
+
+  if (wantLogo || wantStamp){
+    blobToShare = await applyExportOverlaysToBlob(it.blob, {
+      addLogo: wantLogo && !!logoBitmap,
+      addStamp: wantStamp,
+      stampText: wantStamp ? formatStampDateTime(it) : "",
+      avoidDoubleLogo: wantLogo && !!it.hasLogo
+    });
+  }
+
+  const file = new File([blobToShare], name, { type: "image/jpeg" });
+
+  if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))){
+    try { await navigator.share({ files: [file], title: "Foto" }); return; }
+    catch { return; }
+  }
+
+  const url = URL.createObjectURL(blobToShare);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  alert("Tu navegador no permite compartir archivos directo.
+Se descargó la foto para que la envíes por WhatsApp.");
+}
+
+/* ===========================
+   Captura
+=========================== */
+$("btnTomarFoto").onclick = () => {
+  camInput.value = "";
+  camInput.click();
+};
+
+camInput.onchange = async () => {
+  const files = Array.from(camInput.files || []);
+  if (!files.length) return;
+
+  const fecha = fechaInput.value || hoyISO();
+  const proyecto = (proyectoInput.value || "").trim();
+
+  zipInfo.textContent = "Procesando fotos...";
+  for (const file of files){
+    const { blob, hasLogo } = await compressImage(file);
+
+    const item = {
+      id: Date.now() + Math.floor(Math.random()*1000),
+      fecha,
+      proyecto,
+      descripcion: "",
+      done: false,
+      blob,
+      mime: "image/jpeg",
+      createdAt: Date.now(),
+      hasLogo: !!hasLogo
+    };
+
+    await dbPut(item);
+    cache.push(item);
+  }
+
+  camInput.value = "";
+  zipInfo.textContent = "";
+  render();
+};
+
+$("btnLimpiarDia").onclick = async () => {
+  const fecha = fechaInput.value || hoyISO();
+  const items = cache.filter(x => x.fecha === fecha);
+  if (!items.length){ alert("No hay fotos para esa fecha."); return; }
+  if (!confirm(`¿Borrar ${items.length} foto(s) del ${fecha}?`)) return;
+
+  for (const it of items) await dbDelete(it.id);
+  cache = cache.filter(x => x.fecha !== fecha);
+  render();
+};
+
+/* ===========================
+   DOCX helpers + DOCX builder
+=========================== */
+function cmToPx(cm){ return Math.round((cm / 2.54) * 96); }
+
+function computeRangeForTitle(modo, desde, hasta){
+  if (modo === "mes"){
+    const ym = (desde || hoyISO()).slice(0,7);
+    const [y, m] = ym.split("-").map(Number);
+    const start = `${ym}-01`;
+    const last = new Date(y, m, 0).getDate();
+    const end = `${ym}-${String(last).padStart(2,"0")}`;
+    return { start, end };
+  }
+  if (modo === "dia") return { start: desde, end: desde };
+  return { start: desde, end: hasta };
+}
+
+async function normalizeToFixedFrameJpg(blob, frameW=1600, frameH=1000, quality=0.9, fit="stretch"){
+  const bmp = await createImageBitmap(blob);
+  const canvas = document.createElement("canvas");
+  canvas.width = frameW;
+  canvas.height = frameH;
+  const ctx = canvas.getContext("2d");
+
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0,0,frameW,frameH);
+
+  const bw = bmp.width, bh = bmp.height;
+
+  if (fit === "stretch"){
+    ctx.drawImage(bmp, 0, 0, frameW, frameH);
+  } else if (fit === "cover"){
+    const scale = Math.max(frameW / bw, frameH / bh);
+    const nw = Math.round(bw * scale);
+    const nh = Math.round(bh * scale);
+    const x = Math.round((frameW - nw) / 2);
+    const y = Math.round((frameH - nh) / 2);
+    ctx.drawImage(bmp, x, y, nw, nh);
+  } else {
+    const scale = Math.min(frameW / bw, frameH / bh);
+    const nw = Math.round(bw * scale);
+    const nh = Math.round(bh * scale);
+    const x = Math.round((frameW - nw) / 2);
+    const y = Math.round((frameH - nh) / 2);
+    ctx.drawImage(bmp, x, y, nw, nh);
+  }
+
+  const out = await new Promise(res => canvas.toBlob(res, "image/jpeg", quality));
+  return out || blob;
+}
+
+async function buildRegistroFotograficoDocxBuffer(
+  selected, tituloProyecto, startISO, endISO, imgWcm, imgHcm,
+  modulesPerPage = 4,
+  exportOpts=null
+){
+  const {
+    Document, Packer, Paragraph, TextRun,
+    AlignmentType, Table, TableRow, TableCell, WidthType,
+    ImageRun, PageBreak, BorderStyle, Header
+  } = window.docx;
+
+  const docDefaultStyles = {
+    styles: {
+      default: {
+        document: {
+          run: { font: "Calibri", size: 18 },
+          paragraph: { spacing: { before: 0, after: 0 } }
+        }
+      }
+    }
+  };
+
+  const gridBorders = {
+    top:    { style: BorderStyle.SINGLE, size: 2, color: "2A74FF" },
+    bottom: { style: BorderStyle.SINGLE, size: 2, color: "2A74FF" },
+    left:   { style: BorderStyle.SINGLE, size: 2, color: "2A74FF" },
+    right:  { style: BorderStyle.SINGLE, size: 2, color: "2A74FF" },
+    insideHorizontal: { style: BorderStyle.SINGLE, size: 2, color: "2A74FF" },
+    insideVertical:   { style: BorderStyle.SINGLE, size: 2, color: "2A74FF" },
+  };
+
+  const IMG_W = cmToPx(imgWcm);
+  const IMG_H = cmToPx(imgHcm);
+
+  const ratio = IMG_W / IMG_H;
+  const frameW = 1600;
+  const frameH = Math.round(frameW / ratio);
+
+  const fitMode = localStorage.getItem("rf_docx_fit") || "stretch";
+
+  const startLong = formatDateLongES(startISO);
+  const endLong = formatDateLongES(endISO);
+  const sameDay = (startISO === endISO);
+  const titleText = sameDay
+    ? `Reporte fotográfico · ${startLong}`
+    : `Reporte fotográfico · ${startLong} - ${endLong}`;
+
+  const projText = (tituloProyecto || "").trim();
+
+  
+  // Header "marca" (Logi): logo + título con colores vivos
+  const logoAb = await fetch("./icon-192.png").then(r => r.arrayBuffer()).catch(() => null);
+  const logoData = logoAb ? new Uint8Array(logoAb) : null;
+
+  const headerBgLeft  = "0B1220";   // navy oscuro
+  const headerBgRight = "13253A";   // navy más claro (luz/sombra)
+  const headerAccent  = "2A74FF";   // azul Logi
+  const headerText1   = "FFFFFF";
+  const headerText2   = "D7E4FF";
+
+  const headerBottomBorder = {
+    bottom: { style: BorderStyle.SINGLE, size: 10, color: headerAccent },
+    top:    { style: BorderStyle.NONE,   size: 0,  color: headerAccent },
+    left:   { style: BorderStyle.NONE,   size: 0,  color: headerAccent },
+    right:  { style: BorderStyle.NONE,   size: 0,  color: headerAccent },
+  };
+
+  const headerTable = new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    borders: { top: { style: BorderStyle.NONE, size: 0, color: headerAccent },
+               left:{ style: BorderStyle.NONE, size: 0, color: headerAccent },
+               right:{style: BorderStyle.NONE, size: 0, color: headerAccent },
+               bottom:{style: BorderStyle.NONE,size:0,color: headerAccent },
+               insideH:{style: BorderStyle.NONE,size:0,color: headerAccent },
+               insideV:{style: BorderStyle.NONE,size:0,color: headerAccent } },
+    rows: [
+      new TableRow({
+        children: [
+          new TableCell({
+            width: { size: 14, type: WidthType.PERCENTAGE },
+            shading: { fill: headerBgLeft },
+            borders: headerBottomBorder,
+            children: [
+              new Paragraph({
+                alignment: AlignmentType.LEFT,
+                children: logoData ? [
+                  new ImageRun({ data: logoData, transformation: { width: 30, height: 30 } })
+                ] : [ new TextRun({ text: " ", color: headerText1 }) ]
+              })
+            ]
+          }),
+          new TableCell({
+            width: { size: 86, type: WidthType.PERCENTAGE },
+            shading: { fill: headerBgRight },
+            borders: headerBottomBorder,
+            children: [
+              new Paragraph({
+                alignment: AlignmentType.RIGHT,
+                children: [ new TextRun({ text: "Logi", bold: true, size: 44, color: headerText1 }) ],
+                spacing: { before: 0, after: 30 }
+              }),
+              new Paragraph({
+                alignment: AlignmentType.RIGHT,
+                children: [ new TextRun({ text: titleText, size: 22, color: headerText2 }) ],
+                spacing: { before: 0, after: 10 }
+              }),
+              new Paragraph({
+                alignment: AlignmentType.RIGHT,
+                children: [ new TextRun({ text: (projText || "Proyecto: ____________________"), size: 22, color: headerText2 }) ],
+                spacing: { before: 0, after: 0 }
+              })
+            ]
+          })
+        ]
+      })
+    ]
+  });
+
+  const header = new Header({ children: [headerTable] });
+
+let pageRows = [];
+  let photoN = 1;
+  const pages = [];
+
+  async function makeCell(it){
+    if (!it){
+      return new TableCell({ borders: gridBorders, children: [new Paragraph("")] });
+    }
+
+    const fixedBlob = await normalizeToFixedFrameJpg(it.blob, frameW, frameH, 0.9, fitMode);
+
+    let finalBlob = fixedBlob;
+    if (exportOpts?.applyLogo || exportOpts?.applyStamp){
+      finalBlob = await applyExportOverlaysToBlob(fixedBlob, {
+        addLogo: !!exportOpts.applyLogo,
+        addStamp: !!exportOpts.applyStamp,
+        stampText: exportOpts.applyStamp ? formatStampDateTime(it) : "",
+        avoidDoubleLogo: !!(it.hasLogo && exportOpts.applyLogo)
+      });
+    }
+
+    const ab = await finalBlob.arrayBuffer();
+
+    const n = photoN++;
+    const desc = (it.descripcion || "").trim() || "—";
+    const caption = `FOTO ${n}. ${desc}`;
+
+    const img = new ImageRun({
+      data: ab,
+      transformation: { width: IMG_W, height: IMG_H }
+    });
+
+    return new TableCell({
+      width: { size: 50, type: WidthType.PERCENTAGE },
+      borders: gridBorders,
+      children: [
+        new Paragraph({
+          children: [img],
+          alignment: AlignmentType.CENTER,
+          spacing: { before: 0, after: 60 }
+        }),
+        new Paragraph({
+          children: [new TextRun({ text: caption })],
+          spacing: { before: 0, after: 120 }
+        })
+      ]
+    });
+  }
+
+  for (let i = 0; i < selected.length; i += 2){
+    const row = new TableRow({
+      children: [ await makeCell(selected[i]), await makeCell(selected[i+1]) ]
+    });
+    pageRows.push(row);
+
+    if (pageRows.length >= modulesPerPage){
+      pages.push(pageRows);
+      pageRows = [];
+    }
+  }
+  if (pageRows.length) pages.push(pageRows);
+
+  const children = [];
+  pages.forEach((rows, idx) => {
+    children.push(new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      borders: gridBorders,
+      rows
+    }));
+    if (idx !== pages.length - 1){
+      children.push(new Paragraph({ children: [new PageBreak()] }));
+    }
+  });
+
+  const doc = new Document({
+    ...docDefaultStyles,
+    sections: [{
+      headers: { default: header },
+      properties: {
+        page: { margin: { top: 720, bottom: 720, left: 720, right: 720, header: 360 } }
+      },
+      children
+    }]
+  });
+
+  const blob = await Packer.toBlob(doc);
+  return await blob.arrayBuffer();
+}
+
+/* ===========================
+   CSV + XLS
+=========================== */
+function buildManifestCsv(registros){
+  const header = ["fecha","archivo","descripcion","proyecto","listo"].join(";");
+  const lines = [header];
+  registros.forEach(r => {
+    const desc = (r.descripcion || "").replaceAll('"','""');
+    const proj = (r.proyecto || "").replaceAll('"','""');
+    lines.push([
+      r.fecha,
+      r.archivo,
+      `"${desc}"`,
+      `"${proj}"`,
+      r.done ? "SI" : "NO"
+    ].join(";"));
+  });
+  return lines.join("\n");
+}
+
+function buildManifestXlsHtml(registros){
+  const esc = (s)=> String(s ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
+  const rows = registros.map(r => `
+    <tr>
+      <td>${esc(r.fecha)}</td>
+      <td>${esc(r.archivo)}</td>
+      <td>${esc(r.descripcion)}</td>
+      <td>${esc(r.proyecto)}</td>
+      <td>${r.done ? "SI" : "NO"}</td>
+    </tr>
+  `).join("");
+
+  return `
+  <html><head><meta charset="utf-8"></head><body>
+  <table border="1">
+    <tr><th>fecha</th><th>archivo</th><th>descripcion</th><th>proyecto</th><th>listo</th></tr>
+    ${rows}
+  </table>
+  </body></html>`;
+}
+
+/* ===========================
+   Export ZIP (incluye DOCX)
+=========================== */
+async function exportZipByMode(modo, desde, hasta){
+  if (!window.JSZip){ alert("JSZip no cargó. Abre con internet o en Chrome."); return; }
+  if (!window.docx){ alert("La librería DOCX no cargó. Abre con internet o en Chrome."); return; }
+
+  const useTime = !!$("useTimeNames")?.checked;
+  const onlyDone = !!$("onlyDone")?.checked;
+
+  const exportLogo = !!$("exportLogo")?.checked;
+  const exportStampDT = !!$("exportStampDT")?.checked;
+
+  let selected = [];
+  if (modo === "dia"){
+    selected = cache.filter(x => x.fecha === desde);
+  } else if (modo === "mes"){
+    const ym = (desde || hoyISO()).slice(0,7);
+    selected = cache.filter(x => (x.fecha || "").startsWith(ym));
+  } else {
+    const a = ymdToNum(desde);
+    const b = ymdToNum(hasta);
+    const lo = Math.min(a,b), hi = Math.max(a,b);
+    selected = cache.filter(x => {
+      const n = ymdToNum(x.fecha);
+      return n >= lo && n <= hi;
+    });
+  }
+
+  if (onlyDone) selected = selected.filter(x => !!x.done);
+
+  if (!selected.length){
+    alert("No hay fotos en ese periodo" + (onlyDone ? " (o ninguna marcada como LISTA)." : "."));
+    return;
+  }
+
+  selected.sort((a,b)=> (a.fecha.localeCompare(b.fecha) || a.createdAt - b.createdAt));
+
+  const proyecto = sanitizeName(proyectoInput.value);
+  const packName =
+    (modo==="dia") ? `${desde}_${proyecto}` :
+    (modo==="mes") ? `${(desde||hoyISO()).slice(0,7)}_${proyecto}` :
+    `${desde}_a_${hasta}_${proyecto}`;
+
+  const zip = new JSZip();
+  const root = zip.folder(packName);
+
+  const perDayCounter = new Map();
+  const manifestRows = [];
+
+  zipInfo.textContent = `Armando ZIP (${selected.length} foto(s))...`;
+
+  for (const it of selected){
+    const folder = root.folder(it.fecha);
+
+    const n = (perDayCounter.get(it.fecha) || 0) + 1;
+    perDayCounter.set(it.fecha, n);
+
+    const filename = filenameForItem(it, n, useTime);
+
+    let outBlob = it.blob;
+    if (exportLogo || exportStampDT){
+      outBlob = await applyExportOverlaysToBlob(it.blob, {
+        addLogo: exportLogo && !!logoBitmap,
+        addStamp: exportStampDT,
+        stampText: exportStampDT ? formatStampDateTime(it) : "",
+        avoidDoubleLogo: exportLogo && !!it.hasLogo
+      });
+    }
+
+    folder.file(filename, outBlob);
+
+    const descText = (it.descripcion || "").trim();
+    folder.file(filename.replace(/\.jpg$/i,".txt"), descText || "");
+
+    manifestRows.push({
+      fecha: it.fecha,
+      archivo: `${it.fecha}/${filename}`,
+      descripcion: descText,
+      proyecto: it.proyecto || "",
+      done: !!it.done
+    });
+  }
+
+  root.file("manifest.csv", buildManifestCsv(manifestRows));
+  root.file("manifest.xls", buildManifestXlsHtml(manifestRows));
+
+  const IMG_W_CM = 7.6;
+  const IMG_H_CM = 4.6;
+  const MODULES_PER_PAGE = 4;
+
+  const { start, end } = computeRangeForTitle(modo, desde, hasta);
+  const tituloProyecto = (proyectoInput.value || "").trim();
+
+  zipInfo.textContent = "Generando DOCX...";
+  const docxBuffer = await buildRegistroFotograficoDocxBuffer(
+    selected, tituloProyecto, start, end, IMG_W_CM, IMG_H_CM, MODULES_PER_PAGE,
+    { applyLogo: exportLogo && !!logoBitmap, applyStamp: exportStampDT }
+  );
+
+  root.file(`Registro_Fotografico_${start}_a_${end}.docx`, docxBuffer);
+
+  const outZipBlob = await zip.generateAsync({ type:"blob" }, (meta) => {
+    zipInfo.textContent = `Comprimiendo... ${Math.floor(meta.percent)}%`;
+  });
+
+  const url = URL.createObjectURL(outZipBlob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = packName + ".zip";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  zipInfo.textContent = "ZIP descargado ✅";
+  setTimeout(()=> zipInfo.textContent = "", 1800);
+}
+
+$("btnZip").onclick = async () => {
+  const modo = $("modoExport").value;
+  const desde = $("desde").value || (fechaInput.value || hoyISO());
+  const hasta = $("hasta").value || (fechaInput.value || hoyISO());
+  await exportZipByMode(modo, desde, hasta);
+};
+
+$("btnZipHoy").onclick = async () => {
+  const hoy = hoyISO();
+  await exportZipByMode("dia", hoy, hoy);
+};
+
+$("btnBorrarTodo").onclick = async () => {
+  if (!confirm("¿Borrar TODO (todas las fotos y descripciones del dispositivo)?")) return;
+  await dbClear();
+  cache = [];
+  render();
+};
+
+/* ===========================
+   Tabs + render
+=========================== */
+function setTab(mode){
+  viewMode = mode;
+  $("tabCaptura").classList.toggle("active", mode === "captura");
+  $("tabGaleria").classList.toggle("active", mode === "galeria");
+  $("capturaView").style.display = mode === "captura" ? "block" : "none";
+  $("galeriaView").style.display = mode === "galeria" ? "block" : "none";
+  render();
+}
+$("tabCaptura").onclick = () => setTab("captura");
+$("tabGaleria").onclick = () => setTab("galeria");
+
+function render(){
+  revokeActiveUrls();
+  setStatus();
+  if (viewMode === "captura") renderCaptura();
+  else renderGaleria();
+}
+
+/* ===========================
+   Init
+=========================== */
+(async function init(){
+  const today = hoyISO();
+  fechaInput.value = today;
+  $("desde").value = today;
+  $("hasta").value = today;
+
+  loadDocxFit();
+  await loadLogoFromStorage();
+  loadLogoCorner();
+
+  try{
+    cache = await dbGetAll();
+    render();
+  }catch{
+    alert("No se pudo abrir la base local (IndexedDB). Prueba Chrome.");
+  }
+
+  fechaInput.onchange = () => render();
+})();
+</script>
+</body>
+</html>
