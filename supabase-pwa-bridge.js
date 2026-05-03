@@ -189,26 +189,22 @@ window.SupabasePwaSync = (function () {
             let success = 0;
             let errors = 0;
             let firstError = null;
-            const batchSize = 3;
 
-            for (let i = 0; i < projectItems.length; i += batchSize) {
-                const batch = projectItems.slice(i, i + batchSize);
-
-                await Promise.all(batch.map(async (item) => {
-                    try {
-                        await Promise.race([
-                            uploadPhoto(item),
-                            new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 30000))
-                        ]);
-                        success++;
-                    } catch (err) {
-                        console.error("Error subiendo item:", item.id, err);
-                        if (!firstError) firstError = err;
-                        errors++;
-                    }
-                }));
-
-                if (success % 25 === 0) {
+            // v2026-05-03: Sincronización serial (uno a uno) para evitar "Load failed" en móviles
+            for (const item of projectItems) {
+                try {
+                    await Promise.race([
+                        uploadPhoto(item),
+                        new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout (30s)")), 30000))
+                    ]);
+                    success++;
+                } catch (err) {
+                    console.error("Error subiendo item:", item.id, err);
+                    if (!firstError) firstError = err;
+                    errors++;
+                }
+                
+                if (success % 5 === 0) {
                     console.log(`Progreso: ${success}/${projectItems.length}`);
                 }
             }
