@@ -1,15 +1,11 @@
 // sw.js (Logi)
 // Nota: mantén CACHE_VERSION cambiándolo en cada deploy.
-const CACHE_VERSION = "logi2-v20260503-SUPA";
+const CACHE_VERSION = "logi2-v20260503-RESTORED";
 const CACHE = `logi2-cache-${CACHE_VERSION}`;
 
 const ASSETS = [
   "./",
   "./index.html",
-  "./script.js",
-  "./inline.js",
-  "./main_inline.js",
-  "./supabase-pwa-bridge.js",
   "./manifest.webmanifest?v=0.1.43",
   "./favicon.v0.8.7.33.7.png",
   "./apple-touch-icon.v0.8.7.33.7.png",
@@ -18,13 +14,21 @@ const ASSETS = [
   "./icon-512.v0.8.7.33.7.png",
   "./icon-192-maskable.v0.8.7.33.7.png",
   "./icon-512-maskable.v0.8.7.33.7.png",
-  "./lib/docx.min.js",
-  "./lib/jszip.min.js",
-  "./lib/pdf-lib.min.js",
-  "./lib/xlsx.full.min.js",
+  "./Logi2_Plantilla_Items.v0.8.7.33.7.xlsx",
   "./templates/templates.json",
   "./templates/classic.stub.txt",
   "./templates/tags-tabla.stub.txt",
+  "./templates/Plantilla1.pdf",
+  "./templates/Plantilla2.pdf",
+  "./templates/previews/classic_p1.jpg",
+  "./templates/previews/classic_p2.jpg",
+  "./templates/previews/tags_p1.jpg",
+  "./templates/previews/tags_p2.jpg",
+  "./templates/previews/tags_p3.jpg",
+  "./templates/Plantilla3.pdf",
+  "./templates/previews/pairs_p1.jpg",
+  "./templates/previews/pairs_p2.jpg",
+  "./templates/previews/pairs_p3.jpg",
 ];
 
 self.addEventListener("message", (event) => {
