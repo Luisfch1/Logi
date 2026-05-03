@@ -153,6 +153,8 @@ window.SupabasePwaSync = (function() {
                 return;
             }
 
+            // FEEDBACK INICIAL
+            alert(`🔍 Detectadas ${projectItems.length} fotos.\nIniciando subida a Supabase...`);
             console.log(`Supabase Bridge: Sincronizando ${projectItems.length} fotos...`);
             
             let success = 0;
@@ -160,7 +162,15 @@ window.SupabasePwaSync = (function() {
 
             for (const item of projectItems) {
                 try {
-                    await uploadPhoto(item);
+                    // Añadimos un pequeño delay para no saturar y permitir que la UI respire
+                    await new Promise(r => setTimeout(r, 200)); 
+                    
+                    // Timeout manual de 20 segundos por foto
+                    await Promise.race([
+                        uploadPhoto(item),
+                        new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout de 20s")), 20000))
+                    ]);
+                    
                     success++;
                 } catch (err) {
                     console.error("Error subiendo item:", item.id, err);
