@@ -48,31 +48,34 @@ window.SupabasePwaSync = (function() {
         }
     }
 
-    async function uploadPhoto(item) {
-        if (!supabaseClient) {
-            console.warn("Supabase Bridge: Cliente no inicializado, saltando subida.");
-            return;
+    function toUUID(str) {
+        // Generar un UUID determinista a partir del ID de Logi (string/numero)
+        // El formato debe ser 8-4-4-4-12 hex
+        let s = str.toString();
+        // Hacemos un hash simple para completar 32 caracteres hex
+        let hash = 0;
+        for (let i = 0; i < s.length; i++) {
+            hash = ((hash << 5) - hash) + s.charCodeAt(i);
+            hash |= 0;
         }
+        let hex = Math.abs(hash).toString(16).padEnd(32, 'f');
+        return `${hex.slice(0,8)}-${hex.slice(8,12)}-4${hex.slice(13,16)}-a${hex.slice(17,20)}-${hex.slice(20,32)}`;
+    }
+
+    async function uploadPhoto(item) {
+        if (!supabaseClient) return;
 
         const config = getConfig();
         const projectId = config.projectId;
-
-        if (!projectId) {
-            console.warn("Supabase Bridge: No hay ID de proyecto configurado.");
-            return;
-        }
+        if (!projectId) return;
 
         try {
-            // 1. Obtener el blob si no está presente (por si acaso)
             let blob = item.blob;
             if (!blob && typeof dbGetBlob === 'function') {
                 blob = await dbGetBlob(item.id);
             }
 
-            if (!blob) {
-                console.error("Supabase Bridge: No se encontró el blob para el item", item.id);
-                return;
-            }
+            if (!blob) throw new Error("No hay imagen");
 
             // 2. Subir al Storage (Bucket: logi_evidences)
             const fileName = `${projectId}/${item.id}.jpg`;
@@ -86,37 +89,32 @@ window.SupabasePwaSync = (function() {
 
             if (storageError) throw storageError;
 
-            // 3. Insertar Metadata en la tabla logi_evidences
+            // 3. Insertar Metadata en la tabla logi_evidences (ajustado a columnas reales)
             const { error: dbError } = await supabaseClient
                 .from('logi_evidences')
                 .upsert({
-                    id: item.id.toString(),
+                    id: toUUID(item.id),
                     project_id: projectId,
-                    photo_url: fileName,
+                    fecha: item.fecha || new Date().toISOString().split('T')[0],
+                    item_code: item.itemCode || "",
                     description: item.descripcion || "",
-                    metadata: {
-                        fecha: item.fecha,
-                        proyecto_local: item.proyecto,
-                        createdAt: item.createdAt,
-                        hasLogo: item.hasLogo,
-                        local_projectId: item.projectId
-                    },
-                    synced_at: new Date().toISOString()
+                    image_url: fileName,
+                    sync_id: item.id.toString(),
+                    created_at: new Date(item.createdAt || Date.now()).toISOString()
                 });
 
             if (dbError) throw dbError;
 
-            console.log(`Supabase Bridge: Item ${item.id} sincronizado con éxito ✅`);
+            console.log(`Supabase Bridge: Item ${item.id} sincronizado ✅`);
             
-            // Marcar como sincronizado localmente si existe la función
             if (typeof dbPut === 'function') {
                 item.synced = true;
                 await dbPut(item);
             }
 
         } catch (error) {
-            console.error("Supabase Bridge: Error en la sincronización:", error);
-            // Aquí podríamos implementar una cola de reintentos
+            console.error("Supabase Bridge: Error en item", item.id, error);
+            throw error; // Lanzar para que syncAll lo cuente
         }
     }
 
