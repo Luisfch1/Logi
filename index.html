@@ -12083,9 +12083,9 @@ function renderExport(){
   <script>
     // Supabase Configuration Handlers
     window.saveSupabaseConfig = function() {
-      const url = document.getElementById('cfgSupabaseUrl').value;
-      const key = document.getElementById('cfgSupabaseKey').value;
-      const pid = document.getElementById('cfgSupabaseProjectId').value;
+      const url = document.getElementById('cfgSupabaseUrl').value.trim();
+      const key = document.getElementById('cfgSupabaseKey').value.trim();
+      const pid = document.getElementById('cfgSupabaseProjectId').value.trim();
       
       localStorage.setItem('supabase_url', url);
       localStorage.setItem('supabase_key', key);

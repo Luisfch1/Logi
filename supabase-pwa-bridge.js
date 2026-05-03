@@ -26,16 +26,25 @@ window.SupabasePwaSync = (function() {
 
     function initClient() {
         const config = getConfig();
-        if (config.url && config.key) {
-            try {
-                // El SDK se carga via CDN en el index.html
-                supabaseClient = window.supabase.createClient(config.url, config.key);
-                console.log("Supabase Bridge: Cliente inicializado ✅");
-            } catch (e) {
-                console.error("Supabase Bridge: Error inicializando cliente:", e);
-            }
-        } else {
-            console.warn("Supabase Bridge: Falta configuración de URL/Key");
+        console.log("Supabase Bridge: Intentando inicializar con:", config);
+        
+        if (!config.url || !config.key) {
+            console.warn("Supabase Bridge: Configuración incompleta.");
+            return;
+        }
+
+        if (!window.supabase) {
+            console.error("Supabase Bridge: SDK de Supabase no encontrado en window.supabase");
+            alert("⚠️ Error crítico: El SDK de Supabase no cargó. Revisa tu conexión a internet.");
+            return;
+        }
+
+        try {
+            supabaseClient = window.supabase.createClient(config.url, config.key);
+            console.log("Supabase Bridge: Cliente inicializado ✅");
+        } catch (e) {
+            console.error("Supabase Bridge: Error en createClient:", e);
+            alert("⚠️ Error al crear cliente Supabase: " + e.message);
         }
     }
 
