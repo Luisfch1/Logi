@@ -77,8 +77,8 @@ window.SupabasePwaSync = (function () {
 
             if (!blob) throw new Error("No hay imagen");
 
-            // Asegurar que sea un Blob con el tipo correcto para que no salga octet-stream
-            const imageBlob = (blob instanceof Blob) ? blob : new Blob([blob], { type: 'image/jpeg' });
+            // Asegurar que sea un Blob con el tipo correcto para que no salga octet-stream (v2026-05-03)
+            const imageBlob = new Blob([blob], { type: 'image/jpeg' });
 
             // 2. Subir al Storage (Bucket: logi_evidences)
             const fileName = `${projectId}/${item.id}.jpg`;
@@ -92,7 +92,14 @@ window.SupabasePwaSync = (function () {
 
             if (storageError) throw storageError;
 
-            // 3. Insertar Metadata en la tabla logi_evidences (ajustado a columnas reales)
+            // 3. Obtener URL Pública (v2026-05-03: CONTROL requiere link completo)
+            const { data: publicUrlData } = supabaseClient.storage
+                .from('logi_evidences')
+                .getPublicUrl(fileName);
+            
+            const publicUrl = publicUrlData.publicUrl;
+
+            // 4. Insertar Metadata en la tabla logi_evidences (ajustado a columnas reales)
             const { error: dbError } = await supabaseClient
                 .from('logi_evidences')
                 .upsert({
@@ -101,7 +108,7 @@ window.SupabasePwaSync = (function () {
                     fecha: item.fecha || new Date().toISOString().split('T')[0],
                     item_code: item.itemCode || "",
                     description: item.descripcion || "",
-                    image_url: fileName,
+                    image_url: publicUrl,
                     sync_id: item.id.toString(),
                     created_at: new Date(item.createdAt || Date.now()).toISOString()
                 });
