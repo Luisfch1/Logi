@@ -68,6 +68,24 @@
   <!-- Supabase SDK (PWA Sync Support) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-pwa-bridge.js"></script>
+  <!-- Tailwind CSS (For premium UI components) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#CCFF00',
+            secondary: '#1A1A1A',
+            glass: 'rgba(255, 255, 255, 0.05)',
+          },
+          fontFamily: {
+            headline: ['Space Grotesk', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
 
 <style>
     @font-face { font-family: 'Space Grotesk'; font-style: normal; font-weight: 500; font-display: swap; src: url('./fonts/space-grotesk-500.woff2') format('woff2'); }
