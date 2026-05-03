@@ -87,7 +87,7 @@ window.SupabasePwaSync = (function () {
                 .from('logi_evidences')
                 .upload(fileName, imageBlob, {
                     contentType: 'image/jpeg',
-                    upsert: true
+                    upsert: false // v2026-05-03: Desactivamos upsert temporalmente para diagnóstico
                 });
 
             if (storageError) {
