@@ -24,7 +24,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta name="theme-color" content="#0b1220" />
 
-  <title>Logi v0.1.43-173</title>
+    <title>Logi v0.2.0-SUPA</title>
 
   <!-- PWA -->
   <link rel="manifest" href="manifest.webmanifest?v=0.1.43">
@@ -1419,32 +1419,6 @@ details.detailsCard{
             </div>
           </section>
 
-          <!-- Gestión de Datos -->
-          <section class="space-y-6">
-            <div class="flex items-center gap-3 px-1">
-              <span class="material-symbols-outlined text-primary text-lg">inventory_2</span>
-              <h3 class="font-headline text-xs font-bold uppercase tracking-[0.2em] text-white/40">Gestión de Datos</h3>
-            </div>
-            <div class="space-y-4">
-              <div class="glass-card rounded-2xl p-6 space-y-6 border-l-2 border-l-[#CCFF00]/40">
-                <div class="flex items-center gap-4">
-                  <div class="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center text-[#CCFF00]/80">
-                    <span class="material-symbols-outlined">account_tree</span>
-                  </div>
-                  <div>
-                    <p class="font-headline text-sm font-bold tracking-tight text-white">Ítems del proyecto</p>
-                    <p class="text-[11px] text-white/40 uppercase tracking-tighter">Organizar jerarquía de carpetas</p>
-                  </div>
-                </div>
-                <div class="grid grid-cols-3 gap-2">
-                  <button class="py-3 rounded-lg border border-white/5 text-[9px] font-black font-headline tracking-widest text-white/40 hover:border-[#CCFF00] hover:text-[#CCFF00] bg-transparent transition-all uppercase cursor-pointer">Cargar</button>
-                  <button class="py-3 rounded-lg border border-white/5 text-[9px] font-black font-headline tracking-widest text-white/40 hover:border-[#CCFF00] hover:text-[#CCFF00] bg-transparent transition-all uppercase cursor-pointer">Visualizar</button>
-                  <button class="py-3 rounded-lg border border-red-500/10 text-[9px] font-black font-headline tracking-widest text-red-500/40 hover:bg-red-500/10 hover:text-red-500 bg-transparent transition-all uppercase cursor-pointer" onclick="alert('Zona Peligrosa')">Eliminar</button>
-                </div>
-              </div>
-            </div>
-          </section>
-
           <!-- Sincronización Cloud (CONTROL) -->
           <section class="space-y-6">
             <div class="flex items-center gap-3 px-1">
@@ -1468,6 +1442,32 @@ details.detailsCard{
                 <button onclick="saveSupabaseConfig()" class="w-full py-4 rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-500 font-headline text-xs font-bold uppercase tracking-widest hover:bg-orange-500 hover:text-white transition-all active:scale-[0.98] cursor-pointer">
                   Guardar Configuración
                 </button>
+              </div>
+            </div>
+          </section>
+
+          <!-- Gestión de Datos -->
+          <section class="space-y-6">
+            <div class="flex items-center gap-3 px-1">
+              <span class="material-symbols-outlined text-primary text-lg">inventory_2</span>
+              <h3 class="font-headline text-xs font-bold uppercase tracking-[0.2em] text-white/40">Gestión de Datos</h3>
+            </div>
+            <div class="space-y-4">
+              <div class="glass-card rounded-2xl p-6 space-y-6 border-l-2 border-l-[#CCFF00]/40">
+                <div class="flex items-center gap-4">
+                  <div class="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center text-[#CCFF00]/80">
+                    <span class="material-symbols-outlined">account_tree</span>
+                  </div>
+                  <div>
+                    <p class="font-headline text-sm font-bold tracking-tight text-white">Ítems del proyecto</p>
+                    <p class="text-[11px] text-white/40 uppercase tracking-tighter">Organizar jerarquía de carpetas</p>
+                  </div>
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                  <button class="py-3 rounded-lg border border-white/5 text-[9px] font-black font-headline tracking-widest text-white/40 hover:border-[#CCFF00] hover:text-[#CCFF00] bg-transparent transition-all uppercase cursor-pointer">Cargar</button>
+                  <button class="py-3 rounded-lg border border-white/5 text-[9px] font-black font-headline tracking-widest text-white/40 hover:border-[#CCFF00] hover:text-[#CCFF00] bg-transparent transition-all uppercase cursor-pointer">Visualizar</button>
+                  <button class="py-3 rounded-lg border border-red-500/10 text-[9px] font-black font-headline tracking-widest text-red-500/40 hover:bg-red-500/10 hover:text-red-500 bg-transparent transition-all uppercase cursor-pointer" onclick="alert('Zona Peligrosa')">Eliminar</button>
+                </div>
               </div>
             </div>
           </section>
@@ -2341,7 +2341,7 @@ function initTheme(){
    - Evita quedarnos pegados a un cache viejo
 =========================== */
 
-const APP_VERSION = "v0.1.43";
+const APP_VERSION = "v0.2.0-SUPA";
 let swReg = null;
 let waitingSW = null;
 let _swReloaded = false;
