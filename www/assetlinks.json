@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "com.lchingenieria.logi2",
+        "sha256_cert_fingerprints": ["E3:EA:AB:72:45:D7:F2:BE:55:28:E0:08:FD:65:50:2E:CC:68:6F:A9:F7:7A:70:43:BB:32:D0:A1:89:87:ED:FE"]
+      }
+    }]

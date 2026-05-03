@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LOGI - Gallery Screen Dark</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    .hide-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .hide-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    .neon-glow-text {
+      text-shadow: 0 0 10px rgba(202, 253, 0, 0.4);
+    }
+    body {
+      background-color: #000000;
+    }
+  </style>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "surface": "#000000",
+            "background": "#000000",
+            "primary": "#cafd00",
+            "on-primary": "#000000",
+            "surface-variant": "#121212",
+            "outline-variant": "#2a2a2a"
+          },
+          fontFamily: {
+            "headline": ["Space Grotesk"],
+            "body": ["Inter"],
+            "label": ["Inter"]
+          },
+          borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "full": "9999px"},
+        },
+      },
+    }
+  </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-black font-body text-zinc-100 selection:bg-primary selection:text-on-primary overflow-x-hidden">
+<!-- TopAppBar Header -->
+<header class="fixed top-0 w-full z-50 px-6 py-4 flex justify-start items-center bg-black border-b border-white/10">
+<div class="flex items-center gap-3">
+<h1 class="font-headline font-bold tracking-tighter uppercase text-base text-[#cafd00] neon-glow-text">LOGI</h1>
+<span class="material-symbols-outlined text-white/20 text-lg" data-icon="chevron_right">chevron_right</span>
+<span class="font-headline font-medium tracking-tight uppercase text-xs text-zinc-100 font-bold">CEMENTERIO LOCAL RESTREPO</span>
+</div>
+</header>
+<main class="pt-24 pb-32 px-4 max-w-4xl mx-auto">
+<!-- Date Selector Slab -->
+<section class="mb-4 bg-zinc-900/40 px-4 py-3 rounded-xl border border-white/10 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-zinc-500 text-lg" data-icon="calendar_today">calendar_today</span>
+<div class="flex flex-col">
+<span class="font-label text-[10px] uppercase tracking-widest text-zinc-500 font-black">RANGO DE FECHAS</span>
+<div class="flex items-center gap-2 mt-0.5">
+<span class="font-headline font-bold text-sm text-zinc-100">Octubre 2023 - Noviembre 2023</span>
+<span class="material-symbols-outlined text-zinc-500 text-sm" data-icon="expand_more">expand_more</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Search Field Container -->
+<section class="mb-8">
+<div class="relative group flex items-center bg-zinc-900/40 border border-white/10 rounded-xl px-4 py-3 transition-all duration-300 focus-within:border-[#cafd00]/30 shadow-md">
+<span class="material-symbols-outlined text-[#cafd00] text-xl mr-3 transition-colors">search</span>
+<input class="bg-transparent border-none p-0 w-full font-headline text-sm text-zinc-100 placeholder:text-zinc-600 focus:ring-0 outline-none font-medium" placeholder="Filtrar actividades..." type="text"/>
+</div>
+</section>
+<!-- Organized Photo Grid -->
+<div class="space-y-10">
+<!-- First section: HOY -->
+<section>
+<div class="flex items-center gap-4 mb-4">
+<h2 class="font-headline font-bold text-sm tracking-tight text-zinc-100 uppercase">HOY, 24 DE OCTUBRE</h2>
+<div class="h-[1px] flex-grow bg-white/10"></div>
+<span class="text-[10px] font-black uppercase tracking-widest text-[#cafd00]">12 FOTOS</span>
+</div>
+<div class="grid grid-cols-3 gap-2">
+<!-- Photo Card 1 -->
+<div class="group relative bg-zinc-900 rounded-xl overflow-hidden border border-white/5 aspect-square">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Technical architectural close-up of fresh concrete foundation" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC_yrA1dzPc4DTjUm31bcmxMLCG0TZsG2CYIkRTXIxaKDJ1GSrlo4-7trW7JBmoh8nEXUfJ1FVfEeuj8p-jxziFn7jjs3GsLO_0FAu0onjotQ7bsCDaJLTnNw1kEHX4fviem3LzZypP93Zt5GMbY4AxrbkVYDFHvuhVhdIz4roT5urk_Qcjkjt-ahVd8OmCjOZG6RT8X79E933lU-6a4Ybjwu2M45yqFg159S9fDy_qMtfbfS8cLRsqnyUseC8pK69A5PI6e2Wr3Q"/>
+<div class="absolute top-2 left-2">
+<span class="backdrop-blur-md text-[8px] font-black py-0.5 px-1.5 rounded tracking-tighter bg-[#cafd00] text-black">CIM-092</span>
+</div>
+<div class="absolute bottom-2 right-2 flex items-center justify-center bg-[#cafd00] rounded-lg p-1 shadow-sm">
+<span class="material-symbols-outlined text-black text-base" data-icon="share">share</span>
+</div>
+</div>
+<!-- Photo Card 2 -->
+<div class="group relative bg-zinc-900 rounded-xl overflow-hidden border border-white/5 aspect-square">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Wide shot of massive concrete pillars" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC7dWtK4vedLyx3_7mBsyDBIX1wgtxdqTtt_r_9LNgpHbYTj_0hMDgStbji58eMOKvn1sWWR24o0W4HJkGLKSKmGFTzkgef5i0_mvC9bZJUfzGXK3KB2UX488TZwSAQ8A_udzqT385Aa6DKkRbVNrDMJrDI4kOyN4D799580LRqDyaONj7YiENjEK4cbCdvTD33LZJYdcHHiRbYv1bygpGPL1WzmYutSkkO0GFNruORA58Gm5uH2u60ZRwV4T8Zj1lQMlpXX_FoNQ"/>
+<div class="absolute top-2 left-2">
+<span class="backdrop-blur-md text-[8px] font-black py-0.5 px-1.5 rounded tracking-tighter bg-[#cafd00] text-black">EST-114</span>
+</div>
+<div class="absolute bottom-2 right-2 flex items-center justify-center bg-[#cafd00] rounded-lg p-1 shadow-sm">
+<span class="material-symbols-outlined text-black text-base" data-icon="share">share</span>
+</div>
+</div>
+<!-- Photo Card 3 -->
+<div class="group relative bg-zinc-900 rounded-xl overflow-hidden border border-white/5 aspect-square">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Blueprint plans" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAqxNSSvod3a23X7Tc-l9FRR73IAu15BCr6gf-AftoOa9eY2pxdL5vOZ6Mfbvva-6QusNfYSYD8bhezQ1AAk7VfJ4QRt-8vP9S_DhoA_SphOe8Lrk0FcGh0zAe8z-eYnL16yf40LZxudwbVY318z2UUqf_pCwx7ID1yceV9BiL7ovJJr_Uj1nd3-6bx-uqnKbhXfdWE_n_QuioDvCWk34kosN49wk1KBLcbbfG9AJJ1vBYZafa4E1ppXaxD9MVtJsjlFuU9aycqFA"/>
+<div class="absolute top-2 left-2">
+<span class="backdrop-blur-md text-[8px] font-black py-0.5 px-1.5 rounded tracking-tighter bg-[#cafd00] text-black">PLN-REV</span>
+</div>
+<div class="absolute bottom-2 right-2 flex items-center justify-center bg-[#cafd00] rounded-lg p-1 shadow-sm">
+<span class="material-symbols-outlined text-black text-base" data-icon="share">share</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Second section: AYER -->
+<section>
+<div class="flex items-center gap-4 mb-4">
+<h2 class="font-headline font-bold text-sm tracking-tight text-zinc-100 uppercase">AYER, 23 DE OCTUBRE</h2>
+<div class="h-[1px] flex-grow bg-white/10"></div>
+<span class="text-[10px] font-black uppercase tracking-widest text-[#cafd00]">8 FOTOS</span>
+</div>
+<div class="grid grid-cols-3 gap-2">
+<!-- Photo Card 4 -->
+<div class="group relative bg-zinc-900 rounded-xl overflow-hidden border border-white/5 aspect-square">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Interior building site" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCk9ZFAh3ZLt7pdl5XlMRLvQdaP9Q2YGm0sCWuKRD9uw1YRWkEIZJ7DEC6YJzbx5Fqio6RsxcZYzrZWwu9NcnB1ExEbCKdFbwqitu4awqlWxLItvoPXsgSUgafRR7yfKiKTXloLza0zzfdqr_zR6rBl1PWVHCWk9I91CiIKwS_X4wWinhFq-eJDlOSX0VluiBNuL5L4tTMebjUHWGC_e-cbtV1yq-TQpm7tZHNPqErzd8PIyfsvoefWO-uEFm3KZx8L_cmXqPEgkg"/>
+<div class="absolute top-2 left-2">
+<span class="backdrop-blur-md text-[8px] font-black py-0.5 px-1.5 rounded tracking-tighter bg-[#cafd00] text-black">INT-AND</span>
+</div>
+<div class="absolute bottom-2 right-2 flex items-center justify-center bg-[#cafd00] rounded-lg p-1 shadow-sm">
+<span class="material-symbols-outlined text-black text-base" data-icon="share">share</span>
+</div>
+</div>
+<!-- Photo Card 5 -->
+<div class="group relative bg-zinc-900 rounded-xl overflow-hidden border border-white/5 aspect-square">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Steel reinforcement" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCoLLKcuHq587Wd2c2R_S1xwvP4jHtJCp_A0xrN8apAxQijVE9aoSLJdNfayx-TlGpXRlcz9_9_D15dAzF7YoH_VH4IN4YxAT1xaZLWNoT0KzswJ5WqbRhCP96Z9Q-naBtdvQqIvOS35RRdxpE20qYGP5H1r7-b_tlFUCBBanp4xuZtbLbMMd89EgIHUoBvpb49rsgAzbNKI17o6hjOkCPGkwoxlUlnahz2wqGkVh9paWU1Er4JCat4cx1B2CYqvYdqdJSsH8D2Wg"/>
+<div class="absolute top-2 left-2">
+<span class="backdrop-blur-md text-[8px] font-black py-0.5 px-1.5 rounded tracking-tighter bg-[#cafd00] text-black">EST-099</span>
+</div>
+<div class="absolute bottom-2 right-2 flex items-center justify-center bg-[#cafd00] rounded-lg p-1 shadow-sm">
+<span class="material-symbols-outlined text-black text-base" data-icon="share">share</span>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 bg-black border-t border-white/10 flex justify-around items-center px-4 pt-3 pb-8 shadow-2xl">
+<!-- Capture -->
+<a class="flex flex-col items-center justify-center text-zinc-600 hover:text-zinc-400 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="photo_camera">photo_camera</span>
+<span class="font-body font-black uppercase text-[10px] tracking-[0.1em] mt-1">Capture</span>
+</a>
+<!-- Gallery (Active) -->
+<a class="flex flex-col items-center justify-center text-[#cafd00] bg-[#cafd00]/10 rounded-xl px-4 py-1 shadow-[0_0_15px_rgba(202,253,0,0.1)]" href="#">
+<span class="material-symbols-outlined" data-icon="grid_view" style="font-variation-settings: 'FILL' 1;">grid_view</span>
+<span class="font-body font-black uppercase text-[10px] tracking-[0.1em] mt-1">Gallery</span>
+</a>
+<!-- Export -->
+<a class="flex flex-col items-center justify-center text-zinc-600 hover:text-zinc-400 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="ios_share">ios_share</span>
+<span class="font-body font-black uppercase text-[10px] tracking-[0.1em] mt-1">Export</span>
+</a>
+<!-- Reports -->
+<a class="flex flex-col items-center justify-center text-zinc-600 hover:text-zinc-400 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span class="font-body font-black uppercase text-[10px] tracking-[0.1em] mt-1">Reports</span>
+</a>
+</nav>
+</body></html>

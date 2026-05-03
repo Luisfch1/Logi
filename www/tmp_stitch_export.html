@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<style>
+        .neon-glow-text {
+            text-shadow: 0 0 10px rgba(204, 255, 0, 0.4);
+        }
+        .neon-border {
+            border: 1px solid rgba(204, 255, 0, 0.3);
+        }
+        .neon-border-active {
+            border: 1.5px solid #ccff00;
+            box-shadow: 0 0 10px rgba(204, 255, 0, 0.2);
+        }
+        .neon-button-glow {
+            box-shadow: 0 0 20px rgba(204, 255, 0, 0.3);
+        }
+    </style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-card {
+            background: #111111;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#ccff00",
+                        "surface-dim": "#000000",
+                        "on-primary": "#000000",
+                        "surface-container-high": "#111111",
+                        "background": "#000000",
+                        "surface": "#000000",
+                        "on-background": "#ffffff",
+                        "on-surface": "#ffffff",
+                        "outline-variant": "#222222",
+                        "surface-container": "#0a0a0a",
+                        "on-surface-variant": "#888888",
+                    },
+                    fontFamily: {
+                        "headline": ["Space Grotesk"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background text-on-surface font-body min-h-screen pb-32">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 px-6 py-4 flex justify-start items-center bg-black border-b border-white/5">
+<div class="flex items-center gap-3">
+<h1 class="font-headline font-bold tracking-tighter uppercase text-base text-[#ccff00] neon-glow-text">LOGI</h1>
+<span class="material-symbols-outlined text-white/20 text-lg" data-icon="chevron_right">chevron_right</span>
+<span class="font-headline font-medium tracking-tight uppercase text-xs text-white/90 font-bold">CEMENTERIO LOCAL RESTREPO</span>
+</div>
+</header>
+<main class="pt-24 px-6 max-w-2xl mx-auto space-y-10">
+<!-- Section 1: MODO -->
+<section class="space-y-3">
+<label class="font-headline text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface-variant">MODO</label>
+<div class="relative group">
+<select class="w-full bg-surface-container-high border border-white/5 rounded-xl py-4 px-5 text-on-surface font-medium appearance-none focus:ring-1 focus:ring-primary/50 focus:border-primary/50 transition-all cursor-pointer">
+<option>Día</option>
+<option selected="">Rango</option>
+<option>Todo</option>
+</select>
+<span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-primary">expand_more</span>
+</div>
+</section>
+<!-- Section 2: FECHA -->
+<section class="space-y-3">
+<label class="font-headline text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface-variant">FECHA</label>
+<div class="grid grid-cols-2 gap-4">
+<div class="glass-card rounded-xl p-4 flex flex-col gap-1">
+<span class="text-[10px] uppercase font-bold tracking-widest text-on-surface-variant">Inicio</span>
+<span class="font-headline text-lg font-bold text-white">24 OCT 2023</span>
+</div>
+<div class="glass-card rounded-xl p-4 flex flex-col gap-1">
+<span class="text-[10px] uppercase font-bold tracking-widest text-on-surface-variant">Fin</span>
+<span class="font-headline text-lg font-bold text-white">31 OCT 2023</span>
+</div>
+</div>
+</section>
+<!-- Section 3: FORMATO DE SALIDA -->
+<section class="space-y-3">
+<label class="font-headline text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface-variant">FORMATO DE SALIDA</label>
+<div class="flex gap-4">
+<button class="flex-1 glass-card neon-border-active rounded-xl py-4 flex items-center justify-center gap-3 transition-transform active:scale-95">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">picture_as_pdf</span>
+<span class="font-headline font-bold text-primary tracking-widest text-sm">PDF</span>
+</button>
+<button class="flex-1 glass-card border-white/10 rounded-xl py-4 flex items-center justify-center gap-3 opacity-60 hover:opacity-100 transition-all active:scale-95">
+<span class="material-symbols-outlined text-white">description</span>
+<span class="font-headline font-bold tracking-widest text-sm text-white">DOCX</span>
+</button>
+</div>
+</section>
+<!-- Section 4: PLANTILLAS -->
+<section class="space-y-3">
+<label class="font-headline text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface-variant">PLANTILLAS</label>
+<div class="flex gap-4 overflow-x-auto hide-scrollbar -mx-6 px-6 pb-2">
+<div class="min-w-[140px] flex flex-col gap-3 group">
+<div class="aspect-[3/4] rounded-xl overflow-hidden glass-card neon-border-active relative cursor-pointer">
+<img alt="Clásica" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBylyd9X4uHdfnjYoyG0_luE5eAIk7z7L5Drypzk54GLW54ms8cuKjPNZKqs8QDOTHCEmwbi3GuxoBpYzNG7Uk3HlO3TdhEMoRct_0_yCuoNMOzc6P1s1SQDYgp6YWX5Yfbnj_J3poqh8MAjpqOkPPJ7r2iRLaZEeq2XQQwQk3NNjFlha_rTdL5lny3VO9rMbF1CKHAM7L2G6Rhb3SSkXJ66zAmulEhTGqDXA1RndLHXmxKyhRTLXBDAEcKDH_Nu8uPz9a4uvgolQ"/>
+</div>
+<span class="font-headline text-[10px] font-bold uppercase tracking-widest text-primary text-center">Clásica</span>
+</div>
+<div class="min-w-[140px] flex flex-col gap-3 opacity-60 hover:opacity-100 transition-opacity">
+<div class="aspect-[3/4] rounded-xl overflow-hidden glass-card border-white/10 relative cursor-pointer">
+<img alt="Tags / Tabla" class="w-full h-full object-cover grayscale" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDyBkj0zZAF3bUOp3f5hAFpzkZncZaiNPdz7pCCGklADMN7R1Jgq_8fkcWFtI7N1i1ZqFfTqtnQHT_UFxFKk6CXWbbYWCDmv24VVDch-iQs1YKFRWKv8b0laFBYvHcClWOz4aSiDj0ZKsK1u7B1JDW8MzgO0utGj8N_iuAvQ-BBJUAcrXCxgr7NdpJx7KR9s_UUfJL9jGrvqowapM_bqrlUxWI8QWipp1JUtUicEtp101Yib4cPMXSC3jjZvOx3EKY9tYs0jdJq1Q"/>
+</div>
+<span class="font-headline text-[10px] font-bold uppercase tracking-widest text-on-surface-variant text-center">Tags / Tabla</span>
+</div>
+<div class="min-w-[140px] flex flex-col gap-3 opacity-60 hover:opacity-100 transition-opacity">
+<div class="aspect-[3/4] rounded-xl overflow-hidden glass-card border-white/10 relative cursor-pointer">
+<img alt="Fotos por ítem" class="w-full h-full object-cover grayscale" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCskAgyk4oWhBG3B4z0DLek5s_PLbZjNGiuQhoaeRwcaNqYP4-LNYNog-vRgSDbnbFiSmIOXC_fV58BMCktxJ-2SMwXWzszk2hlv1YwlJ3f7aa4kI4ldicnOfE7yqZTbBzkO0VfFNznXjQtXJ4Mdz2p31OpfGG5b7lg0T9s3NQ02HJV-SEKZtgoKFhInWEevIhELG0wRB_zf_vFBkwY_D-VcNgWmztojsdFTwqBskVTW0sjqDXGl9zZ8D8910V9HMpQwlvrOsaMQQ"/>
+</div>
+<span class="font-headline text-[10px] font-bold uppercase tracking-widest text-on-surface-variant text-center">Fotos por ítem</span>
+</div>
+</div>
+</section>
+<!-- Section 5: LOGO -->
+<section class="space-y-3">
+<label class="font-headline text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface-variant">LOGO (OPCIONAL)</label>
+<div class="bg-surface-container-high rounded-2xl p-5 space-y-5 border border-white/5">
+<div class="flex gap-3">
+<button class="flex-1 flex items-center justify-center gap-2 bg-background border border-primary/30 rounded-xl py-3 px-4 active:scale-95 transition-all text-primary">
+<span class="material-symbols-outlined text-xl">add_photo_alternate</span>
+<span class="text-[10px] font-bold uppercase tracking-wider">Cargar logo</span>
+</button>
+<button class="flex-1 flex items-center justify-center gap-2 bg-background border border-white/10 rounded-xl py-3 px-4 active:scale-95 transition-all text-white/40">
+<span class="material-symbols-outlined text-xl">delete</span>
+<span class="text-[10px] font-bold uppercase tracking-wider">Quitar logo</span>
+</button>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative flex-1">
+<select class="w-full bg-background border border-white/10 rounded-xl py-3 px-4 text-xs font-medium appearance-none focus:ring-1 focus:ring-primary/50 transition-all cursor-pointer text-white">
+<option>Inferior derecha</option>
+<option>Superior izquierda</option>
+<option>Superior derecha</option>
+<option>Inferior izquierda</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-primary text-xl">unfold_more</span>
+</div>
+<div class="w-14 h-14 rounded-lg bg-background flex items-center justify-center overflow-hidden border border-white/10">
+<img alt="Logo preview" class="w-10 h-10 object-contain opacity-30 grayscale invert" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCskAgyk4oWhBG3B4z0DLek5s_PLbZjNGiuQhoaeRwcaNqYP4-LNYNog-vRgSDbnbFiSmIOXC_fV58BMCktxJ-2SMwXWzszk2hlv1YwlJ3f7aa4kI4ldicnOfE7yqZTbBzkO0VfFNznXjQtXJ4Mdz2p31OpfGG5b7lg0T9s3NQ02HJV-SEKZtgoKFhInWEevIhELG0wRB_zf_vFBkwY_D-VcNgWmztojsdFTwqBskVTW0sjqDXGl9zZ8D8910V9HMpQwlvrOsaMQQ"/>
+</div>
+</div>
+<p class="text-[10px] text-on-surface-variant leading-relaxed">El logo se aplica solo al exportar o compartir. La foto original no se modifica.</p>
+</div>
+</section>
+<!-- Section 6: OPCIONES -->
+<section class="space-y-3">
+<label class="font-headline text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface-variant">OPCIONES</label>
+<div class="bg-surface-container-high rounded-2xl overflow-hidden border border-white/5">
+<div class="flex items-center justify-between p-5 border-b border-white/5">
+<span class="font-medium text-sm text-white">WhatsApp: incluir logo</span>
+<div class="w-12 h-6 bg-primary/20 rounded-full relative p-1 cursor-pointer">
+<div class="w-4 h-4 bg-primary rounded-full translate-x-6 shadow-[0_0_8px_rgba(204,255,0,0.6)]"></div>
+</div>
+</div>
+<div class="flex items-center justify-between p-5 border-b border-white/5">
+<span class="font-medium text-sm text-white">WhatsApp: incluir fecha/hora</span>
+<div class="w-12 h-6 bg-primary/20 rounded-full relative p-1 cursor-pointer">
+<div class="w-4 h-4 bg-primary rounded-full translate-x-6 shadow-[0_0_8px_rgba(204,255,0,0.6)]"></div>
+</div>
+</div>
+<div class="flex items-center justify-between p-5">
+<span class="font-medium text-sm text-white">Exportación: usar formato del proyecto</span>
+<div class="w-12 h-6 bg-white/10 rounded-full relative p-1 cursor-pointer">
+<div class="w-4 h-4 bg-white/40 rounded-full"></div>
+</div>
+</div>
+</div>
+</section>
+<!-- Footer Button -->
+<div class="py-8">
+<button class="w-full bg-primary text-black font-headline font-bold text-lg tracking-widest py-5 rounded-2xl shadow-[0_10px_40px_rgba(204,255,0,0.2)] hover:scale-[1.01] active:scale-95 transition-all neon-button-glow">
+            EXPORTAR
+        </button>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 py-3 pb-safe bg-black/90 backdrop-blur-2xl border-t border-white/5 shadow-[0_-10px_30px_rgba(0,0,0,0.5)] z-50">
+<div class="flex flex-col items-center justify-center text-on-surface-variant hover:text-white transition-colors cursor-pointer">
+<span class="material-symbols-outlined mb-1">photo_camera</span>
+<span class="font-headline text-[10px] font-bold uppercase tracking-widest">Capture</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant hover:text-white transition-colors cursor-pointer">
+<span class="material-symbols-outlined mb-1">grid_view</span>
+<span class="font-headline text-[10px] font-bold uppercase tracking-widest">Gallery</span>
+</div>
+<div class="flex flex-col items-center justify-center text-primary group cursor-pointer relative">
+<div class="absolute -inset-x-4 -inset-y-2 bg-primary/5 rounded-xl"></div>
+<span class="material-symbols-outlined mb-1 relative z-10" style="font-variation-settings: 'FILL' 1;">ios_share</span>
+<span class="font-headline text-[10px] font-bold uppercase tracking-widest relative z-10">Export</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant hover:text-white transition-colors cursor-pointer">
+<span class="material-symbols-outlined mb-1">analytics</span>
+<span class="font-headline text-[10px] font-bold uppercase tracking-widest">Reports</span>
+</div>
+</nav>
+</body></html>
