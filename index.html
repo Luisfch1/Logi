@@ -1491,6 +1491,9 @@ details.detailsCard{
       <button class="nav-tab flex flex-col items-center justify-center text-white/40 hover:text-white transition-all rounded-full px-5 py-3" onclick="showSection('sectionInformes', this)">
         <span class="material-symbols-outlined text-[26px]" id="navIconReports">analytics</span>
       </button>
+      <button class="nav-tab flex flex-col items-center justify-center text-white/40 hover:text-white transition-all rounded-full px-5 py-3" id="btnSettings" onclick="showSection('sectionAjustes', this)">
+        <span class="material-symbols-outlined text-[26px]" id="navIconSettings">settings</span>
+      </button>
     </nav>
 
 <!-- Modal: Proyectos (Rediseño) -->
@@ -2488,35 +2491,18 @@ async function updateStorageUI(){
 }
 
 function openSheet(){
-  $("sheetBackdrop").classList.add("open");
-  $("sheet").classList.add("open");
-  $("sheetBackdrop").setAttribute("aria-hidden","false");
-  // Asegurar que los pickers existan (en dispositivos lentos se puede abrir antes del init)
-  try{
-    const pal = $("accentPalette");
-    if (pal && pal.children.length === 0) initAccent();
-    const sk = $("skinPicker");
-    if (sk && sk.children.length === 0) initSkin();
-  }catch(e){}
-  // Si había puntico de update, lo dejamos (es info útil). No lo quitamos.
-  syncThemeUI();
-  syncSkinUI();
-  syncAccentUI();
-  syncUpdateLabel();
-  updateStorageUI();
-}
-function closeSheet(){
-  $("sheet").classList.remove("open");
-  // esperar transición
-  setTimeout(() => {
-    $("sheetBackdrop").classList.remove("open");
-    $("sheetBackdrop").setAttribute("aria-hidden","true");
-  }, 220);
+  // Redirección a la nueva sección premium de Ajustes
+  showSection('sectionAjustes', $("btnSettings"));
 }
 
-$("btnSettings").onclick = openSheet;
-$("btnSheetClose").onclick = closeSheet;
-$("btnStorageRefresh").onclick = updateStorageUI;
+function closeSheet(){
+  // Si estamos en la sección de ajustes, volvemos a captura
+  showSection('sectionCaptura', document.querySelector('.nav-tab'));
+}
+
+if ($("btnSettings")) $("btnSettings").onclick = openSheet;
+if ($("btnSheetClose")) $("btnSheetClose").onclick = closeSheet;
+if ($("btnStorageRefresh")) $("btnStorageRefresh").onclick = updateStorageUI;
 
 $("sheetBackdrop").addEventListener("click", (e)=>{ if (e.target.id === "sheetBackdrop") closeSheet(); });
 
