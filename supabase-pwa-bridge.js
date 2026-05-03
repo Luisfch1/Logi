@@ -77,12 +77,15 @@ window.SupabasePwaSync = (function () {
 
             if (!blob) throw new Error("No hay imagen");
 
+            // Asegurar que sea un Blob con el tipo correcto para que no salga octet-stream
+            const imageBlob = (blob instanceof Blob) ? blob : new Blob([blob], { type: 'image/jpeg' });
+
             // 2. Subir al Storage (Bucket: logi_evidences)
             const fileName = `${projectId}/${item.id}.jpg`;
             const { data: storageData, error: storageError } = await supabaseClient
                 .storage
                 .from('logi_evidences')
-                .upload(fileName, blob, {
+                .upload(fileName, imageBlob, {
                     contentType: 'image/jpeg',
                     upsert: true
                 });

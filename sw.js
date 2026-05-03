@@ -1,6 +1,6 @@
 // sw.js (Logi)
 // Nota: mantén CACHE_VERSION cambiándolo en cada deploy.
-const CACHE_VERSION = "logi2-v20260503-ANIM";
+const CACHE_VERSION = 'logi2-v20260503-V21-FINAL';
 const CACHE = `logi2-cache-${CACHE_VERSION}`;
 
 const ASSETS = [
