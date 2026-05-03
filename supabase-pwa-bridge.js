@@ -109,6 +109,52 @@ window.SupabasePwaSync = (function() {
         }
     }
 
+    async function syncAll() {
+        if (!supabaseClient) {
+            alert("⚠️ Supabase no configurado. Ve a Ajustes.");
+            return;
+        }
+
+        const config = getConfig();
+        const projectId = config.projectId;
+        if (!projectId) {
+            alert("⚠️ ID de Proyecto no configurado.");
+            return;
+        }
+
+        try {
+            // Intentar obtener items del proyecto activo (si existe dbGetAll)
+            if (typeof dbGetAll !== 'function') {
+                alert("⚠️ Error de base de datos local.");
+                return;
+            }
+
+            const items = await dbGetAll();
+            // Filtrar por proyecto activo (como hace el backup)
+            const activeId = (typeof getActiveProjectId === 'function') ? getActiveProjectId() : null;
+            const projectItems = activeId ? items.filter(it => it.projectId === activeId) : items;
+
+            if (projectItems.length === 0) {
+                alert("No hay fotos para sincronizar.");
+                return;
+            }
+
+            console.log(`Supabase Bridge: Iniciando sincronización de ${projectItems.length} items...`);
+            
+            let count = 0;
+            for (const item of projectItems) {
+                await uploadPhoto(item);
+                count++;
+                // Opcional: Feedback visual si tuviéramos un elemento en la UI
+            }
+
+            alert(`Sincronización completa: ${count} fotos procesadas.`);
+        } catch (e) {
+            console.error("Supabase Bridge: Error en syncAll:", e);
+            alert("Error durante la sincronización. Revisa la consola.");
+        }
+    }
+
     // Inicializar al cargar
     initClient();
 
@@ -116,6 +162,7 @@ window.SupabasePwaSync = (function() {
         upload: uploadPhoto,
         saveConfig: saveConfig,
         getConfig: getConfig,
-        reinit: initClient
+        reinit: initClient,
+        syncAll: syncAll
     };
 })();
