@@ -198,6 +198,17 @@
     .tagTable{width:100%;border-collapse:collapse;font-size:12px}
     .tagTable th,.tagTable td{border:1px solid #0f172a;padding:6px 8px;vertical-align:top}
     .tagTable th{background:#e2e8f0}
+
+    /* Sync Animation */
+    @keyframes syncRotate {
+      0% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.2); opacity: 0.5; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .syncing .icon {
+      display: inline-block;
+      animation: syncRotate 1.5s infinite ease-in-out;
+    }
     .tagPhotoBox{height:120px;background:linear-gradient(135deg,#fde68a,#93c5fd);border:1px solid #0f172a;border-radius:8px}
     .tagCaption{font-size:11px;color:#111;margin-top:6px}
 

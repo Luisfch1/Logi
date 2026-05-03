@@ -121,6 +121,7 @@ window.SupabasePwaSync = (function() {
     }
 
     async function syncAll() {
+        const btn = document.getElementById('btnCloudSync');
         if (!supabaseClient) {
             alert("⚠️ Supabase no configurado. Ve a Ajustes.");
             return;
@@ -133,36 +134,48 @@ window.SupabasePwaSync = (function() {
             return;
         }
 
+        if (btn) btn.classList.add('syncing');
+
         try {
-            // Intentar obtener items del proyecto activo (si existe dbGetAll)
             if (typeof dbGetAll !== 'function') {
-                alert("⚠️ Error de base de datos local.");
+                alert("⚠️ Error de base de datos local (dbGetAll no definida).");
+                if (btn) btn.classList.remove('syncing');
                 return;
             }
 
             const items = await dbGetAll();
-            // Filtrar por proyecto activo (como hace el backup)
             const activeId = (typeof getActiveProjectId === 'function') ? getActiveProjectId() : null;
-            const projectItems = activeId ? items.filter(it => it.projectId === activeId) : items;
+            
+            // Filtrar items: deben tener el mismo projectId (CONTROL)
+            const projectItems = items.filter(it => (activeId ? it.projectId === activeId : true));
 
             if (projectItems.length === 0) {
-                alert("No hay fotos para sincronizar.");
+                alert("No hay fotos en el proyecto activo para sincronizar.");
+                if (btn) btn.classList.remove('syncing');
                 return;
             }
 
-            console.log(`Supabase Bridge: Iniciando sincronización de ${projectItems.length} items...`);
+            console.log(`Supabase Bridge: Sincronizando ${projectItems.length} fotos...`);
             
-            let count = 0;
+            let success = 0;
+            let errors = 0;
+
             for (const item of projectItems) {
-                await uploadPhoto(item);
-                count++;
-                // Opcional: Feedback visual si tuviéramos un elemento en la UI
+                try {
+                    await uploadPhoto(item);
+                    success++;
+                } catch (err) {
+                    console.error("Error subiendo item:", item.id, err);
+                    errors++;
+                }
             }
 
-            alert(`Sincronización completa: ${count} fotos procesadas.`);
+            alert(`✅ Sincronización terminada.\n\nÉxito: ${success}\nErrores: ${errors}`);
         } catch (e) {
-            console.error("Supabase Bridge: Error en syncAll:", e);
-            alert("Error durante la sincronización. Revisa la consola.");
+            console.error("Supabase Bridge: Error fatal en syncAll:", e);
+            alert("Error crítico durante la sincronización: " + e.message);
+        } finally {
+            if (btn) btn.classList.remove('syncing');
         }
     }
 
