@@ -12080,5 +12080,47 @@ function renderExport(){
     </div>
   </div>
 
+  <script>
+    // Supabase Configuration Handlers
+    window.saveSupabaseConfig = function() {
+      const url = document.getElementById('cfgSupabaseUrl').value;
+      const key = document.getElementById('cfgSupabaseKey').value;
+      const pid = document.getElementById('cfgSupabaseProjectId').value;
+      
+      localStorage.setItem('supabase_url', url);
+      localStorage.setItem('supabase_key', key);
+      localStorage.setItem('supabase_project_id', pid);
+      
+      alert('Configuración guardada correctamente.');
+      
+      if (window.SupabasePwaSync && window.SupabasePwaSync.reinit) {
+        window.SupabasePwaSync.reinit();
+      }
+    };
+
+    window.loadSupabaseConfig = function() {
+      const urlField = document.getElementById('cfgSupabaseUrl');
+      if (urlField) {
+        urlField.value = localStorage.getItem('supabase_url') || '';
+        document.getElementById('cfgSupabaseKey').value = localStorage.getItem('supabase_key') || '';
+        document.getElementById('cfgSupabaseProjectId').value = localStorage.getItem('supabase_project_id') || '';
+      }
+    };
+
+    // Load configuration when the sheet opens
+    (function() {
+      const checkBtn = setInterval(() => {
+        const btn = document.getElementById('btnSettings');
+        if (btn) {
+          const originalOnClick = btn.onclick;
+          btn.onclick = function() {
+            if (typeof originalOnClick === 'function') originalOnClick();
+            window.loadSupabaseConfig();
+          };
+          clearInterval(checkBtn);
+        }
+      }, 500);
+    })();
+  </script>
 </body>
 </html>

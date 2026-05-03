@@ -10,15 +10,17 @@ window.SupabasePwaSync = (function() {
     const STORAGE_KEY = 'logi_supabase_config';
 
     function getConfig() {
-        try {
-            return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-        } catch (e) {
-            return {};
-        }
+        return {
+            url: localStorage.getItem('supabase_url') || '',
+            key: localStorage.getItem('supabase_key') || '',
+            projectId: localStorage.getItem('supabase_project_id') || ''
+        };
     }
 
     function saveConfig(config) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+        if (config.url) localStorage.setItem('supabase_url', config.url);
+        if (config.key) localStorage.setItem('supabase_key', config.key);
+        if (config.projectId) localStorage.setItem('supabase_project_id', config.projectId);
         initClient(); // Reiniciar cliente con nueva config
     }
 
