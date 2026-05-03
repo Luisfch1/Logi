@@ -154,27 +154,35 @@ window.SupabasePwaSync = (function() {
             }
 
             // FEEDBACK INICIAL
-            alert(`🔍 Detectadas ${projectItems.length} fotos.\nIniciando subida a Supabase...`);
-            console.log(`Supabase Bridge: Sincronizando ${projectItems.length} fotos...`);
+            alert(`🔍 Detectadas ${projectItems.length} fotos.\nIniciando subida acelerada (en lotes de 3).\n\nEste proceso puede tardar. Por favor, no cierres la app.`);
+            console.log(`Supabase Bridge: Sincronizando ${projectItems.length} fotos en lotes...`);
             
             let success = 0;
             let errors = 0;
+            const batchSize = 3; // Subir de 3 en 3 para no saturar el móvil
 
-            for (const item of projectItems) {
-                try {
-                    // Añadimos un pequeño delay para no saturar y permitir que la UI respire
-                    await new Promise(r => setTimeout(r, 200)); 
-                    
-                    // Timeout manual de 20 segundos por foto
-                    await Promise.race([
-                        uploadPhoto(item),
-                        new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout de 20s")), 20000))
-                    ]);
-                    
-                    success++;
-                } catch (err) {
-                    console.error("Error subiendo item:", item.id, err);
-                    errors++;
+            for (let i = 0; i < projectItems.length; i += batchSize) {
+                const batch = projectItems.slice(i, i + batchSize);
+                
+                // Procesar lote en paralelo
+                await Promise.all(batch.map(async (item) => {
+                    try {
+                        // Timeout de 30s por foto
+                        await Promise.race([
+                            uploadPhoto(item),
+                            new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 30000))
+                        ]);
+                        success++;
+                    } catch (err) {
+                        console.error("Error subiendo item:", item.id, err);
+                        errors++;
+                    }
+                }));
+
+                // Cada 25 fotos, mostrar un pequeño log o alert si quisiéramos, 
+                // pero mejor dejar que el iPhone trabaje tranquilo.
+                if (success % 25 === 0) {
+                    console.log(`Progreso: ${success}/${projectItems.length}`);
                 }
             }
 
