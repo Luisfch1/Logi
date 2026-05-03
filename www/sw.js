@@ -1,11 +1,12 @@
 // sw.js (Logi)
 // Nota: mantén CACHE_VERSION cambiándolo en cada deploy.
-const CACHE_VERSION = "logi2-v0.1.43";
+const CACHE_VERSION = "logi2-v20260503-SUPA";
 const CACHE = `logi2-cache-${CACHE_VERSION}`;
 
 const ASSETS = [
   "./",
   "./index.html",
+  "./supabase-pwa-bridge.js",
   "./manifest.webmanifest?v=0.1.43",
   "./favicon.v0.8.7.33.7.png",
   "./apple-touch-icon.v0.8.7.33.7.png",
