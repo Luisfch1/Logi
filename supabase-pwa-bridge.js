@@ -190,18 +190,39 @@ window.SupabasePwaSync = (function () {
             let errors = 0;
             let firstError = null;
 
-            // v2026-05-03: Sincronización serial (uno a uno) para evitar "Load failed" en móviles
-            for (const item of projectItems) {
-                try {
-                    await Promise.race([
-                        uploadPhoto(item),
-                        new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout (30s)")), 30000))
-                    ]);
-                    success++;
-                } catch (err) {
-                    console.error("Error subiendo item:", item.id, err);
-                    if (!firstError) firstError = err;
-                    errors++;
+            // v2026-05-03: Sincronización serial con pausas y reintento para máxima estabilidad en iPhone
+            for (let i = 0; i < projectItems.length; i++) {
+                const item = projectItems[i];
+                let attempt = 0;
+                let done = false;
+
+                while (attempt < 2 && !done) {
+                    try {
+                        if (attempt > 0) {
+                            console.log(`Reintentando item ${item.id} (intento ${attempt + 1})...`);
+                            await new Promise(r => setTimeout(r, 2000)); // Esperar 2s antes de reintentar
+                        }
+
+                        await Promise.race([
+                            uploadPhoto(item),
+                            new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout (30s)")), 30000))
+                        ]);
+                        
+                        success++;
+                        done = true;
+                    } catch (err) {
+                        attempt++;
+                        if (attempt >= 2) {
+                            console.error("Error definitivo subiendo item:", item.id, err);
+                            if (!firstError) firstError = err;
+                            errors++;
+                        }
+                    }
+                }
+
+                // Pausa de cortesía entre fotos para no saturar la radio del móvil
+                if (i < projectItems.length - 1) {
+                    await new Promise(r => setTimeout(r, 500));
                 }
                 
                 if (success % 5 === 0) {
