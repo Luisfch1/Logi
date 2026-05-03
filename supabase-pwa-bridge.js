@@ -5,7 +5,7 @@
  * fotos directamente con Supabase sin usar adaptadores nativos.
  */
 
-window.SupabasePwaSync = (function() {
+window.SupabasePwaSync = (function () {
     let supabaseClient = null;
     const STORAGE_KEY = 'logi_supabase_config';
 
@@ -27,7 +27,7 @@ window.SupabasePwaSync = (function() {
     function initClient() {
         const config = getConfig();
         console.log("Supabase Bridge: Intentando inicializar con:", config);
-        
+
         if (!config.url || !config.key) {
             console.warn("Supabase Bridge: Configuración incompleta.");
             return;
@@ -59,7 +59,7 @@ window.SupabasePwaSync = (function() {
             hash |= 0;
         }
         let hex = Math.abs(hash).toString(16).padEnd(32, 'f');
-        return `${hex.slice(0,8)}-${hex.slice(8,12)}-4${hex.slice(13,16)}-a${hex.slice(17,20)}-${hex.slice(20,32)}`;
+        return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-4${hex.slice(13, 16)}-a${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
     }
 
     async function uploadPhoto(item) {
@@ -106,7 +106,7 @@ window.SupabasePwaSync = (function() {
             if (dbError) throw dbError;
 
             console.log(`Supabase Bridge: Item ${item.id} sincronizado ✅`);
-            
+
             if (typeof dbPut === 'function') {
                 item.synced = true;
                 await dbPut(item);
@@ -143,7 +143,7 @@ window.SupabasePwaSync = (function() {
 
             const items = await dbGetAll();
             const activeId = (typeof getActiveProjectId === 'function') ? getActiveProjectId() : null;
-            
+
             // Filtrar items: deben tener el mismo projectId (CONTROL)
             const projectItems = items.filter(it => (activeId ? it.projectId === activeId : true));
 
@@ -156,15 +156,15 @@ window.SupabasePwaSync = (function() {
             // FEEDBACK INICIAL
             alert(`🔍 Detectadas ${projectItems.length} fotos.\nIniciando subida acelerada (en lotes de 3).\n\nEste proceso puede tardar. Por favor, no cierres la app.`);
             console.log(`Supabase Bridge: Sincronizando ${projectItems.length} fotos en lotes...`);
-            
+
             let success = 0;
             let errors = 0;
             let firstError = null;
-            const batchSize = 3; 
+            const batchSize = 3;
 
             for (let i = 0; i < projectItems.length; i += batchSize) {
                 const batch = projectItems.slice(i, i + batchSize);
-                
+
                 await Promise.all(batch.map(async (item) => {
                     try {
                         await Promise.race([
