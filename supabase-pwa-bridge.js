@@ -99,10 +99,10 @@ window.SupabasePwaSync = (function () {
             
             const publicUrl = publicUrlData.publicUrl;
 
-            // 4. Insertar Metadata en la tabla logi_evidences (ajustado a columnas reales)
+            // 4. Insertar Metadata en la tabla logi_evidences (v2026-05-03: Usamos insert + ignore para evitar bloqueos por RLS de UPDATE)
             const { error: dbError } = await supabaseClient
                 .from('logi_evidences')
-                .upsert({
+                .insert([{
                     id: toUUID(item.id),
                     project_id: projectId,
                     fecha: item.fecha || new Date().toISOString().split('T')[0],
@@ -111,7 +111,16 @@ window.SupabasePwaSync = (function () {
                     image_url: publicUrl,
                     sync_id: item.id.toString(),
                     created_at: new Date(item.createdAt || Date.now()).toISOString()
-                });
+                }]);
+
+            if (dbError) {
+                // Si el error es que ya existe (23505), lo damos por éxito ya que ya está en la nube
+                if (dbError.code === '23505') {
+                    console.log("Item ya sincronizado anteriormente:", item.id);
+                    return { success: true, alreadySynced: true };
+                }
+                throw dbError;
+            }
 
             if (dbError) throw dbError;
 
