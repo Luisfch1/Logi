@@ -11,9 +11,9 @@ window.SupabasePwaSync = (function () {
 
     function getConfig() {
         return {
-            url: localStorage.getItem('supabase_url') || '',
-            key: localStorage.getItem('supabase_key') || '',
-            projectId: localStorage.getItem('supabase_project_id') || ''
+            url: (localStorage.getItem('supabase_url') || '').trim(),
+            key: (localStorage.getItem('supabase_key') || '').trim(),
+            projectId: (localStorage.getItem('supabase_project_id') || '').trim()
         };
     }
 
@@ -90,7 +90,10 @@ window.SupabasePwaSync = (function () {
                     upsert: true
                 });
 
-            if (storageError) throw storageError;
+            if (storageError) {
+                console.error("Supabase Bridge: Error de STORAGE:", storageError);
+                throw new Error(`Error de Almacenamiento (Storage): ${storageError.message || storageError.error_description || 'Acceso Denegado'}`);
+            }
 
             // 3. Obtener URL Pública (v2026-05-03: CONTROL requiere link completo)
             const { data: publicUrlData } = supabaseClient.storage
@@ -99,7 +102,7 @@ window.SupabasePwaSync = (function () {
             
             const publicUrl = publicUrlData.publicUrl;
 
-            // 4. Insertar/Actualizar Metadata en la tabla logi_evidences (v2026-05-03: Usamos upsert para soportar actualizaciones de ítems posteriores)
+            // 4. Insertar/Actualizar Metadata en la tabla logi_evidences
             const { error: dbError } = await supabaseClient
                 .from('logi_evidences')
                 .upsert({
@@ -109,13 +112,14 @@ window.SupabasePwaSync = (function () {
                     item_code: item.itemCode || "",
                     description: item.descripcion || "",
                     image_url: publicUrl,
-                    sync_id: item.id.toString(),
-                    created_at: new Date(item.createdAt || Date.now()).toISOString()
+                    sync_id: item.id.toString()
+                    // v2026-05-03: Quitamos created_at del upsert para evitar conflictos de RLS en columnas protegidas
                 });
 
-            if (dbError) throw dbError;
-
-            if (dbError) throw dbError;
+            if (dbError) {
+                console.error("Supabase Bridge: Error de BASE DE DATOS:", dbError);
+                throw new Error(`Error de Base de Datos (Table): ${dbError.message || dbError.details || 'Violación de RLS'}`);
+            }
 
             console.log(`Supabase Bridge: Item ${item.id} sincronizado ✅`);
 
