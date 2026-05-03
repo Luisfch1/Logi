@@ -82,13 +82,26 @@ window.SupabasePwaSync = (function () {
 
             // 2. Subir al Storage (Bucket: logi_evidences)
             const fileName = `${projectId}/${item.id}.jpg`;
-            const { data: storageData, error: storageError } = await supabaseClient
+            let { data: storageData, error: storageError } = await supabaseClient
                 .storage
                 .from('logi_evidences')
                 .upload(fileName, imageBlob, {
                     contentType: 'image/jpeg',
-                    upsert: true // v2026-05-03: Reactivamos upsert ahora que sabemos que requiere DELETE policy
+                    upsert: true
                 });
+
+            // Fallback: Si falla porque "ya existe" (a veces el upsert:true falla por RLS), intentamos .update() directamente
+            if (storageError && (storageError.message?.includes('already exist') || storageError.error === 'Duplicate')) {
+                console.log("Supabase Bridge: El recurso ya existe, intentando actualización directa (.update())...");
+                const { data: updateData, error: updateError } = await supabaseClient
+                    .storage
+                    .from('logi_evidences')
+                    .update(fileName, imageBlob, {
+                        contentType: 'image/jpeg'
+                    });
+                storageData = updateData;
+                storageError = updateError;
+            }
 
             if (storageError) {
                 console.error("Supabase Bridge: Error de STORAGE:", storageError);
