@@ -159,15 +159,14 @@ window.SupabasePwaSync = (function() {
             
             let success = 0;
             let errors = 0;
-            const batchSize = 3; // Subir de 3 en 3 para no saturar el móvil
+            let firstError = null;
+            const batchSize = 3; 
 
             for (let i = 0; i < projectItems.length; i += batchSize) {
                 const batch = projectItems.slice(i, i + batchSize);
                 
-                // Procesar lote en paralelo
                 await Promise.all(batch.map(async (item) => {
                     try {
-                        // Timeout de 30s por foto
                         await Promise.race([
                             uploadPhoto(item),
                             new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 30000))
@@ -175,18 +174,21 @@ window.SupabasePwaSync = (function() {
                         success++;
                     } catch (err) {
                         console.error("Error subiendo item:", item.id, err);
+                        if (!firstError) firstError = err;
                         errors++;
                     }
                 }));
 
-                // Cada 25 fotos, mostrar un pequeño log o alert si quisiéramos, 
-                // pero mejor dejar que el iPhone trabaje tranquilo.
                 if (success % 25 === 0) {
                     console.log(`Progreso: ${success}/${projectItems.length}`);
                 }
             }
 
-            alert(`✅ Sincronización terminada.\n\nÉxito: ${success}\nErrores: ${errors}`);
+            if (errors > 0) {
+                alert(`⚠️ Sincronización con errores.\n\nÉxito: ${success}\nErrores: ${errors}\n\nMotivo del primer error:\n${firstError?.message || JSON.stringify(firstError)}`);
+            } else {
+                alert(`✅ Sincronización terminada con éxito.\n\nTotal: ${success} fotos.`);
+            }
         } catch (e) {
             console.error("Supabase Bridge: Error fatal en syncAll:", e);
             alert("Error crítico durante la sincronización: " + e.message);
