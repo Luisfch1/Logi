@@ -4375,6 +4375,9 @@ function __enqueueWrite(fn){
 }
 
 async function dbPutQ(item){
+  // v2026-05-04: Soporte para Sincronización Delta
+  if (item) item.updated_at = Date.now();
+  
   const id = item && item.id != null ? item.id : null;
   const t0 = Date.now();
   try{ BB.push("DB_PUTQ_START", { id, done: !!(item&&item.done), code: (item&&item.itemCode)||"" }); }catch(e){}
