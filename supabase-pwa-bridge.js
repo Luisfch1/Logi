@@ -184,11 +184,15 @@ window.SupabasePwaSync = (function () {
             const activeId = activeProject ? activeProject.id : null;
             const activeName = activeProject ? activeProject.name : null;
 
-            // Filtrar items: deben tener el mismo projectId (o nombre si es registro antiguo) y estar pendientes de sincronización (v2026-05-05)
+            // Filtrar items: deben tener el mismo projectId (o nombre si es registro antiguo) y estar pendientes de sincronización (v2026-05-05: Filtro Agresivo)
             const projectItems = items.filter(it => {
+                const itName = (it.proyecto || "").trim().toLowerCase();
+                const targetName = (activeName || "").trim().toLowerCase();
+
                 const matchesProject = activeId 
-                    ? (it.projectId === activeId || (!it.projectId && it.proyecto === activeName))
+                    ? (it.projectId === activeId || itName === targetName)
                     : true;
+                    
                 return matchesProject && (!it.synced || it.needsSync);
             });
 
