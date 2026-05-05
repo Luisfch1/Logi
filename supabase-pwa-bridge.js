@@ -193,7 +193,9 @@ window.SupabasePwaSync = (function () {
             });
 
             if (projectItems.length === 0) {
-                alert("No hay fotos en el proyecto activo para sincronizar.");
+                const totalItems = items.length;
+                const needsSyncCount = items.filter(it => !it.synced || it.needsSync).length;
+                alert(`No hay fotos para sincronizar en este proyecto.\n\nDebug Info:\n- Total en DB: ${totalItems}\n- Pendientes (global): ${needsSyncCount}\n- ID Activo: ${activeId || '?'}\n- Nombre Activo: ${activeName || '?'}\n\nTip: Verifica que el proyecto esté seleccionado como "activo" en la lista de proyectos.`);
                 if (btn) btn.classList.remove('syncing');
                 return;
             }
