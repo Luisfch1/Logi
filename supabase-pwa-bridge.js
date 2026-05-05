@@ -184,10 +184,13 @@ window.SupabasePwaSync = (function () {
             const activeId = activeProject ? activeProject.id : null;
             const activeName = activeProject ? activeProject.name : null;
 
-            // Filtrar items: deben tener el mismo projectId (o nombre si es registro antiguo) y estar pendientes de sincronización (v2026-05-05: Filtro Agresivo)
+            // Filtrar items: deben tener el mismo projectId (o nombre si es registro antiguo) y estar pendientes de sincronización (v2026-05-05: Filtro Ultra-Agresivo con normalización)
             const projectItems = items.filter(it => {
-                const itName = (it.proyecto || "").trim().toLowerCase();
-                const targetName = (activeName || "").trim().toLowerCase();
+                // Función para normalizar texto (quitar tildes, espacios y pasar a minúsculas)
+                const norm = (s) => (s || "").toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
+                
+                const itName = norm(it.proyecto);
+                const targetName = norm(activeName);
 
                 const matchesProject = activeId 
                     ? (it.projectId === activeId || itName === targetName)
