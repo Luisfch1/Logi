@@ -180,10 +180,17 @@ window.SupabasePwaSync = (function () {
             }
 
             const items = await dbGetAll();
-            const activeId = (typeof getActiveProjectId === 'function') ? getActiveProjectId() : null;
+            const activeProject = (typeof getActiveProject === 'function') ? getActiveProject() : null;
+            const activeId = activeProject ? activeProject.id : null;
+            const activeName = activeProject ? activeProject.name : null;
 
-            // Filtrar items: deben tener el mismo projectId (CONTROL) y estar pendientes de sincronización
-            const projectItems = items.filter(it => (activeId ? it.projectId === activeId : true) && (!it.synced || it.needsSync));
+            // Filtrar items: deben tener el mismo projectId (o nombre si es registro antiguo) y estar pendientes de sincronización (v2026-05-05)
+            const projectItems = items.filter(it => {
+                const matchesProject = activeId 
+                    ? (it.projectId === activeId || (!it.projectId && it.proyecto === activeName))
+                    : true;
+                return matchesProject && (!it.synced || it.needsSync);
+            });
 
             if (projectItems.length === 0) {
                 alert("No hay fotos en el proyecto activo para sincronizar.");

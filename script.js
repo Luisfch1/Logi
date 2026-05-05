@@ -5632,6 +5632,8 @@ $("modalItem").oninput = async () => {
   if (modalId == null) return;
   const it = cache.find(x => x.id === modalId);
   if (!it || it.done) return;
+  // Asegurar projectId para registros antiguos (v2026-05-05)
+  if (!it.projectId) { const active = getActiveProject(); if (active) it.projectId = active.id; }
   const raw = $("modalItem").value || "";
   const code = raw.trim();
   // hint siempre se actualiza
@@ -5662,6 +5664,8 @@ $("modalDesc").oninput = async () => {
   if (modalId == null) return;
   const it = cache.find(x => x.id === modalId);
   if (!it || it.done) return;
+  // Asegurar projectId para registros antiguos (v2026-05-05)
+  if (!it.projectId) { const active = getActiveProject(); if (active) it.projectId = active.id; }
   const updated = { ...it, descripcion: $("modalDesc").value, needsSync: true };
   await dbPutQ(updated);
   cache = cache.map(x => x.id === updated.id ? updated : x);
@@ -5700,6 +5704,8 @@ $("btnModalDone").onclick = async () => {
     }
   }
 
+  // Asegurar projectId para registros antiguos (v2026-05-05)
+  if (!it.projectId) { const active = getActiveProject(); if (active) it.projectId = active.id; }
   const updated = { ...it, done: !it.done, needsSync: true };
   await dbPutQ(updated);
   cache = cache.map(x => x.id === updated.id ? updated : x);
