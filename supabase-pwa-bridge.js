@@ -170,95 +170,63 @@ window.SupabasePwaSync = (function () {
             return;
         }
 
-        if (btn) btn.classList.add('syncing');
-
         try {
-            if (typeof dbGetAll !== 'function') {
-                alert("⚠️ Error de base de datos local (dbGetAll no definida).");
-                if (btn) btn.classList.remove('syncing');
-                return;
-            }
+            if (btn) btn.classList.add('syncing');
 
             const items = await dbGetAll();
             const activeProject = (typeof getActiveProject === 'function') ? getActiveProject() : null;
             const activeId = activeProject ? activeProject.id : null;
             const activeName = activeProject ? activeProject.name : null;
 
-            // Filtrar items: deben tener el mismo projectId (o nombre si es registro antiguo) y estar pendientes de sincronización (v2026-05-05: Filtro Ultra-Agresivo con normalización)
+            // Filtrar items: deben tener el mismo projectId (o nombre si es registro antiguo) y estar pendientes de sincronización
             const projectItems = items.filter(it => {
-                // Función para normalizar texto (quitar tildes, espacios y pasar a minúsculas)
                 const norm = (s) => (s || "").toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
-                
                 const itName = norm(it.proyecto);
                 const targetName = norm(activeName);
-
-                const matchesProject = activeId 
-                    ? (it.projectId === activeId || itName === targetName)
-                    : true;
-                    
+                const matchesProject = activeId ? (it.projectId === activeId || itName === targetName) : true;
                 return matchesProject && (!it.synced || it.needsSync);
             });
 
             if (projectItems.length === 0) {
                 const totalItems = items.length;
                 const needsSyncCount = items.filter(it => !it.synced || it.needsSync).length;
-                alert(`No hay fotos para sincronizar en este proyecto.\n\nDebug Info:\n- Total en DB: ${totalItems}\n- Pendientes (global): ${needsSyncCount}\n- ID Activo: ${activeId || '?'}\n- Nombre Activo: ${activeName || '?'}\n\nTip: Verifica que el proyecto esté seleccionado como "activo" en la lista de proyectos.`);
+                alert(`No hay fotos para sincronizar en este proyecto.\n\nDebug Info:\n- Total en DB: ${totalItems}\n- Pendientes: ${needsSyncCount}\n- Proyecto Activo: ${activeName || 'Ninguno'}`);
                 if (btn) btn.classList.remove('syncing');
                 return;
             }
 
             // FEEDBACK INICIAL
-            alert(`🔍 Detectadas ${projectItems.length} fotos.\nIniciando subida acelerada (en lotes de 3).\n\nEste proceso puede tardar. Por favor, no cierres la app.`);
-            console.log(`Supabase Bridge: Sincronizando ${projectItems.length} fotos en lotes...`);
+            alert(`🚀 INICIANDO TURBO-SYNC\n\nDetectadas: ${projectItems.length} fotos.\nProcesando en paralelo (Lotes de 4).\n\nEsto será 4 veces más rápido.`);
 
-            let success = 0;
-            let errors = 0;
+            let successCount = 0;
+            let errorCount = 0;
             let firstError = null;
 
-            // v2026-05-03: Sincronización serial con pausas y reintento para máxima estabilidad en iPhone
-            for (let i = 0; i < projectItems.length; i++) {
-                const item = projectItems[i];
-                let attempt = 0;
-                let done = false;
-
-                while (attempt < 2 && !done) {
-                    try {
-                        if (attempt > 0) {
-                            console.log(`Reintentando item ${item.id} (intento ${attempt + 1})...`);
-                            await new Promise(r => setTimeout(r, 2000)); // Esperar 2s antes de reintentar
-                        }
-
-                        await Promise.race([
-                            uploadPhoto(item),
-                            new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout (30s)")), 30000))
-                        ]);
-                        
-                        success++;
-                        done = true;
-                    } catch (err) {
-                        attempt++;
-                        if (attempt >= 2) {
-                            console.error("Error definitivo subiendo item:", item.id, err);
-                            if (!firstError) firstError = err;
-                            errors++;
-                        }
-                    }
-                }
-
-                // Pausa de cortesía entre fotos para no saturar la radio del móvil
-                if (i < projectItems.length - 1) {
-                    await new Promise(r => setTimeout(r, 500));
-                }
+            const CHUNK_SIZE = 4;
+            for (let i = 0; i < projectItems.length; i += CHUNK_SIZE) {
+                const chunk = projectItems.slice(i, i + CHUNK_SIZE);
                 
-                if (success % 5 === 0) {
-                    console.log(`Progreso: ${success}/${projectItems.length}`);
-                }
+                // Ejecutar subidas del chunk en paralelo
+                await Promise.all(chunk.map(async (it) => {
+                    try {
+                        // v2026-05-05: uploadPhoto es la función que hace el push real
+                        await uploadPhoto(it);
+                        successCount++;
+                    } catch (err) {
+                        errorCount++;
+                        if (!firstError) firstError = err;
+                        console.error(`Error en item ${it.id}:`, err);
+                    }
+                }));
+
+                // Pequeña pausa para no saturar la radio del móvil
+                await new Promise(r => setTimeout(r, 100));
             }
 
-            if (errors > 0) {
-                alert(`⚠️ Sincronización con errores.\n\nÉxito: ${success}\nErrores: ${errors}\n\nMotivo del primer error:\n${firstError?.message || JSON.stringify(firstError)}`);
+            if (errorCount > 0) {
+                alert(`⚠️ Sincronización terminada con algunos errores.\n\nÉxito: ${successCount}\nErrores: ${errorCount}\n\nPrimer error: ${firstError?.message || 'Error desconocido'}`);
             } else {
-                alert(`✅ Sincronización terminada con éxito.\n\nTotal: ${success} fotos.`);
+                alert(`✅ TURBO-SYNC COMPLETADO\n\nSe han subido ${successCount} fotos exitosamente.`);
             }
         } catch (e) {
             console.error("Supabase Bridge: Error fatal en syncAll:", e);
