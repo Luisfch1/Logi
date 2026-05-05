@@ -5649,6 +5649,7 @@ $("modalItem").oninput = async () => {
   } else {
     it.itemCode = code;
     it.itemDesc = (code && catalogMap[code]) ? catalogMap[code] : "";
+    it.needsSync = true;
     await dbPutQ(it);
   }
   // refrescar hints en captura
