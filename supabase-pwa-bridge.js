@@ -80,32 +80,39 @@ window.SupabasePwaSync = (function () {
             // Asegurar que sea un Blob con el tipo correcto para que no salga octet-stream (v2026-05-03)
             const imageBlob = new Blob([blob], { type: 'image/jpeg' });
 
-            // 2. Subir al Storage (Bucket: logi_evidences)
             const fileName = `${projectId}/${item.id}.jpg`;
-            let { data: storageData, error: storageError } = await supabaseClient
-                .storage
-                .from('logi_evidences')
-                .upload(fileName, imageBlob, {
-                    contentType: 'image/jpeg',
-                    upsert: true
-                });
+            let publicUrl = "";
 
-            // Fallback: Si falla porque "ya existe" (a veces el upsert:true falla por RLS), intentamos .update() directamente
-            if (storageError && (storageError.message?.includes('already exist') || storageError.error === 'Duplicate')) {
-                console.log("Supabase Bridge: El recurso ya existe, intentando actualización directa (.update())...");
-                const { data: updateData, error: updateError } = await supabaseClient
+            // 2. Subir al Storage (SOLO si no está sincronizado aún o si queremos forzar resubida)
+            if (!item.synced) {
+                console.log(`Supabase Bridge: Subiendo binario para ${item.id}...`);
+                let { data: storageData, error: storageError } = await supabaseClient
                     .storage
                     .from('logi_evidences')
-                    .update(fileName, imageBlob, {
-                        contentType: 'image/jpeg'
+                    .upload(fileName, imageBlob, {
+                        contentType: 'image/jpeg',
+                        upsert: true
                     });
-                storageData = updateData;
-                storageError = updateError;
-            }
 
-            if (storageError) {
-                console.error("Supabase Bridge: Error de STORAGE:", storageError);
-                throw new Error(`Error de Almacenamiento (Storage): ${storageError.message || storageError.error_description || 'Acceso Denegado'}`);
+                // Fallback: Si falla porque "ya existe" (a veces el upsert:true falla por RLS), intentamos .update() directamente
+                if (storageError && (storageError.message?.includes('already exist') || storageError.error === 'Duplicate')) {
+                    console.log("Supabase Bridge: El recurso ya existe, intentando actualización directa (.update())...");
+                    const { data: updateData, error: updateError } = await supabaseClient
+                        .storage
+                        .from('logi_evidences')
+                        .update(fileName, imageBlob, {
+                            contentType: 'image/jpeg'
+                        });
+                    storageData = updateData;
+                    storageError = updateError;
+                }
+
+                if (storageError) {
+                    console.error("Supabase Bridge: Error de STORAGE:", storageError);
+                    throw new Error(`Error de Almacenamiento (Storage): ${storageError.message || storageError.error_description || 'Acceso Denegado'}`);
+                }
+            } else {
+                console.log(`Supabase Bridge: Binario ya existe para ${item.id}, saltando subida a Storage.`);
             }
 
             // 3. Obtener URL Pública (v2026-05-03: CONTROL requiere link completo)
@@ -113,9 +120,10 @@ window.SupabasePwaSync = (function () {
                 .from('logi_evidences')
                 .getPublicUrl(fileName);
             
-            const publicUrl = publicUrlData.publicUrl;
+            publicUrl = publicUrlData.publicUrl;
 
             // 4. Insertar/Actualizar Metadata en la tabla logi_evidences
+            console.log(`Supabase Bridge: Actualizando metadata para ${item.id}...`);
             const { error: dbError } = await supabaseClient
                 .from('logi_evidences')
                 .upsert({
@@ -138,6 +146,7 @@ window.SupabasePwaSync = (function () {
 
             if (typeof dbPut === 'function') {
                 item.synced = true;
+                item.needsSync = false;
                 await dbPut(item);
             }
 
@@ -173,8 +182,8 @@ window.SupabasePwaSync = (function () {
             const items = await dbGetAll();
             const activeId = (typeof getActiveProjectId === 'function') ? getActiveProjectId() : null;
 
-            // Filtrar items: deben tener el mismo projectId (CONTROL)
-            const projectItems = items.filter(it => (activeId ? it.projectId === activeId : true));
+            // Filtrar items: deben tener el mismo projectId (CONTROL) y estar pendientes de sincronización
+            const projectItems = items.filter(it => (activeId ? it.projectId === activeId : true) && (!it.synced || it.needsSync));
 
             if (projectItems.length === 0) {
                 alert("No hay fotos en el proyecto activo para sincronizar.");

@@ -3093,6 +3093,7 @@ async function commitItemFromText(obj, rawText){
   if (!code){
     obj.itemCode = "";
     obj.itemDesc = "";
+    obj.needsSync = true;
     await dbPutQ(obj);
     return { committed:true, code:"" };
   }
@@ -3102,6 +3103,7 @@ async function commitItemFromText(obj, rawText){
   }
   obj.itemCode = code;
   obj.itemDesc = catalogMap[code] || "";
+  obj.needsSync = true;
   await dbPutQ(obj);
   return { committed:true, code };
 }
@@ -5659,7 +5661,7 @@ $("modalDesc").oninput = async () => {
   if (modalId == null) return;
   const it = cache.find(x => x.id === modalId);
   if (!it || it.done) return;
-  const updated = { ...it, descripcion: $("modalDesc").value };
+  const updated = { ...it, descripcion: $("modalDesc").value, needsSync: true };
   await dbPutQ(updated);
   cache = cache.map(x => x.id === updated.id ? updated : x);
 };
@@ -5697,7 +5699,7 @@ $("btnModalDone").onclick = async () => {
     }
   }
 
-  const updated = { ...it, done: !it.done };
+  const updated = { ...it, done: !it.done, needsSync: true };
   await dbPutQ(updated);
   cache = cache.map(x => x.id === updated.id ? updated : x);
 
