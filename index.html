@@ -1254,6 +1254,7 @@ details.detailsCard{
             </div>
           </div>
           <button class="btn btn-primary" onclick="saveSupabaseConfig()" style="width:100%; margin-top:12px; padding:12px; font-weight:bold;">Guardar Configuración Cloud</button>
+          <button class="btn btn-secondary" onclick="resetCloudSyncStatus()" style="width:100%; margin-top:8px; padding:10px; font-size:0.8rem; opacity:0.8;">🔄 Restablecer marcas de sincronización</button>
         </div>
 
         <div class="card">
@@ -12118,6 +12119,31 @@ function renderExport(){
         urlField.value = localStorage.getItem('supabase_url') || '';
         document.getElementById('cfgSupabaseKey').value = localStorage.getItem('supabase_key') || '';
         document.getElementById('cfgSupabaseProjectId').value = localStorage.getItem('supabase_project_id') || '';
+      }
+    };
+
+    window.resetCloudSyncStatus = async function() {
+      if (!confirm('¿Deseas restablecer el estado de sincronización de TODAS las fotos?\n\nEsto hará que la app intente subirlas de nuevo a Supabase en el próximo proceso de sincronización. Usa esto solo si has limpiado tu base de datos en la nube.')) return;
+      
+      try {
+        if (typeof dbGetAll !== 'function') throw new Error("Base de datos no disponible");
+        const items = await dbGetAll();
+        let count = 0;
+        for (let it of items) {
+          it.synced = false;
+          it.needsSync = true;
+          // Asegurar projectId para registros antiguos (v2026-05-05)
+          if (!it.projectId && typeof getActiveProject === 'function') {
+            const active = getActiveProject();
+            if (active) it.projectId = active.id;
+          }
+          await dbPut(it);
+          count++;
+        }
+        alert(`Se han restablecido ${count} registros. Ahora puedes pulsar el botón de sincronización en la pantalla principal.`);
+        if (typeof render === 'function') render();
+      } catch (e) {
+        alert('Error: ' + e.message);
       }
     };
 
