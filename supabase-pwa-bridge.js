@@ -70,21 +70,21 @@ window.SupabasePwaSync = (function () {
         if (!projectId) return;
 
         try {
-            let blob = item.blob;
-            if (!blob && typeof dbGetBlob === 'function') {
-                blob = await dbGetBlob(item.id);
-            }
-
-            if (!blob) throw new Error("No hay imagen");
-
-            // Asegurar que sea un Blob con el tipo correcto para que no salga octet-stream (v2026-05-03)
-            const imageBlob = new Blob([blob], { type: 'image/jpeg' });
-
             const fileName = `${projectId}/${item.id}.jpg`;
             let publicUrl = "";
 
             // 2. Subir al Storage (SOLO si no está sincronizado aún o si queremos forzar resubida)
             if (!item.synced) {
+                let blob = item.blob;
+                if (!blob && typeof dbGetBlob === 'function') {
+                    blob = await dbGetBlob(item.id);
+                }
+
+                if (!blob) throw new Error("No hay imagen");
+
+                // Asegurar que sea un Blob con el tipo correcto para que no salga octet-stream (v2026-05-03)
+                const imageBlob = new Blob([blob], { type: 'image/jpeg' });
+
                 console.log(`Supabase Bridge: Subiendo binario para ${item.id}...`);
                 let { data: storageData, error: storageError } = await supabaseClient
                     .storage
