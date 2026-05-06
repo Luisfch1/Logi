@@ -942,6 +942,43 @@ details.detailsCard{
 .tplPdfActions{display:flex;justify-content:flex-end;margin:0 0 10px 0;}
 .tplPdfLink{font-size:13px;text-decoration:none;border:1px solid rgba(255,255,255,.18);padding:6px 10px;border-radius:10px;}
 .tplPdfLink:hover{text-decoration:underline;}
+    /* ===========================
+       Cloud Sync Indicators
+    ============================ */
+    .cloud-status {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      transition: all 0.3s ease;
+      vertical-align: middle;
+      margin-left: 6px;
+    }
+    .cloud-status.synced {
+      background: rgba(34, 197, 94, 0.15);
+      color: #22c55e;
+      border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+    .cloud-status.pending {
+      background: rgba(234, 179, 8, 0.15);
+      color: #eab308;
+      border: 1px solid rgba(234, 179, 8, 0.3);
+      animation: pulseSync 2s infinite;
+    }
+    @keyframes pulseSync {
+      0% { opacity: 0.6; }
+      50% { opacity: 1; }
+      100% { opacity: 0.6; }
+    }
+    .badgeCloud {
+      right: 6px;
+      top: 56px; /* Debajo de los otros badges */
+    }
+    .badgeCloud.synced { color: #22c55e !important; border-color: rgba(34, 197, 94, 0.4) !important; background: rgba(34,197,94,0.1) !important; }
+    .badgeCloud.pending { color: #eab308 !important; border-color: rgba(234, 179, 8, 0.4) !important; background: rgba(234,179,8,0.1) !important; }
 </style>
   <!-- Supabase SDK (PWA Sync Support) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -6890,6 +6927,10 @@ function renderCaptura(){
             ${item.proyecto ? `<span>· ${item.proyecto}</span>` : `<span>· —</span>`}
             ${item.itemCode ? `<span>· ${item.itemCode}</span>` : ``}
             ${item.done ? `<span class="chip-done">LISTO</span>` : ``}
+            <span class="cloud-status ${item.synced && !item.needsSync ? 'synced' : 'pending'}" 
+                  title="${item.synced && !item.needsSync ? 'Sincronizado' : 'Pendiente de subir'}">
+                  ${item.synced && !item.needsSync ? '☁️' : '☁️'}
+            </span>
           </div>
 
           <label style="margin-top:6px">Ítem (opcional)</label>
@@ -7137,14 +7178,18 @@ async function hydrateImage(img, id){
   }
 }
 
+let __hydrationQueue = Promise.resolve();
 function hydrateAllVisible(){
   // Hidratar solo las que están en el DOM y marcadas como lazy
   document.querySelectorAll("img[data-hydrate='1']").forEach(img => {
-    const id = Number(img.dataset.open || img.dataset.id);
-    if (id) {
-      delete img.dataset.hydrate; // evitar doble carga
-      hydrateImage(img, id);
-    }
+    // Usar una cola serial para no saturar IndexedDB en Safari (evita OOM/IDB Loss)
+    __hydrationQueue = __hydrationQueue.then(async () => {
+        const id = Number(img.dataset.open || img.dataset.id);
+        if (id) {
+          img.dataset.hydrate = "0"; // evitar doble carga
+          await hydrateImage(img, id);
+        }
+    });
   });
 }
 
@@ -7196,6 +7241,7 @@ if (!groups.length){
         <div class="badge ${it.done ? "badgeDone" : ""}">${it.done ? "LISTO" : "PEND"}</div>
         <div class="badge badgeItem ${hasItem ? "badgeItemOk" : "badgeItemMiss"}">${hasItem ? escAttr(codeShort) : "ÍTEM?"}</div>
         <div class="badge badgeShare">📤</div>
+        <div class="badge badgeCloud ${it.synced && !it.needsSync ? "synced" : "pending"}">${it.synced && !it.needsSync ? "☁️" : "☁️"}</div>
       `;
       grid.appendChild(box);
     });
