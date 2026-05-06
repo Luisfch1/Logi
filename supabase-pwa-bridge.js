@@ -210,14 +210,40 @@ window.SupabasePwaSync = (function () {
 
             if (projectItems.length === 0) {
                 const totalItems = items.length;
-                const needsSyncCount = items.filter(it => !it.synced || it.needsSync).length;
-                alert(`No hay fotos para sincronizar en este proyecto.\n\nDebug Info:\n- Total en DB: ${totalItems}\n- Pendientes: ${needsSyncCount}\n- Proyecto Activo: ${activeName || 'Ninguno'}`);
+                const inProject = items.filter(it => {
+                    const norm = (s) => (s || "").toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
+                    const itName = norm(it.proyecto);
+                    const targetName = norm(activeName);
+                    return activeId ? (it.projectId === activeId || itName === targetName) : true;
+                }).length;
+                const alreadySynced = items.filter(it => {
+                    const norm = (s) => (s || "").toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
+                    const itName = norm(it.proyecto);
+                    const targetName = norm(activeName);
+                    const isProj = activeId ? (it.projectId === activeId || itName === targetName) : true;
+                    return isProj && it.synced && !it.needsSync;
+                }).length;
+
+                alert(`No hay fotos pendientes de sincronización en este proyecto.\n\nResumen:\n- Fotos en este proyecto: ${inProject}\n- Ya sincronizadas: ${alreadySynced}\n- Pendientes: 0\n\nSi has editado descripciones, asegúrate de que el indicador de nube en la foto no esté verde.`);
                 if (btn) btn.classList.remove('syncing');
                 return;
             }
 
             // FEEDBACK INICIAL
-            alert(`🚀 INICIANDO TURBO-SYNC\n\nDetectadas: ${projectItems.length} fotos.\nProcesando en paralelo (Lotes de 4).\n\nEsto será 4 veces más rápido.`);
+            const logMsg = `🚀 INICIANDO TURBO-SYNC\n\n` +
+                           `Proyecto Logi: ${activeName || 'Sin nombre'}\n` +
+                           `ID Destino Cloud: ${projectId}\n` +
+                           `Fotos a enviar: ${projectItems.length}\n\n` +
+                           `Procesando en lotes de 4...`;
+            
+            console.log("Supabase Bridge: Iniciando sync detallado:", {
+                logiProject: activeName,
+                logiProjectId: activeId,
+                cloudProjectId: projectId,
+                itemsToSync: projectItems.length
+            });
+
+            alert(logMsg);
 
             let successCount = 0;
             let errorCount = 0;

@@ -1254,7 +1254,8 @@ details.detailsCard{
             </div>
           </div>
           <button class="btn btn-primary" onclick="saveSupabaseConfig()" style="width:100%; margin-top:12px; padding:12px; font-weight:bold;">Guardar Configuración Cloud</button>
-          <button class="btn btn-secondary" onclick="resetCloudSyncStatus()" style="width:100%; margin-top:8px; padding:10px; font-size:0.8rem; opacity:0.8;">🔄 Restablecer marcas de sincronización</button>
+          <button class="btn btn-secondary" onclick="resetCloudSyncStatus()" style="width:100%; margin-top:8px; padding:10px; font-size:0.8rem; opacity:0.8;">🔄 Restablecer marcas de sincronización (Global)</button>
+          <button class="btn btn-secondary" onclick="forceSyncCurrentProject()" style="width:100%; margin-top:8px; padding:10px; font-size:0.8rem; font-weight:bold; color:var(--accent);">🚀 Forzar Re-sincronización del PROYECTO ACTUAL</button>
         </div>
 
         <div class="card">
@@ -2334,27 +2335,61 @@ async function repairApp(){
 $("btnResetCache").onclick = repairApp;
 
 async function rescuePhotos(){
-  const ok = confirm("🔦 Rescate de fotos\n\nEsta herramienta buscará en TODA la memoria del dispositivo fotos que no aparecen en la galería actual (por ejemplo, si se guardaron sin proyecto o en otro proyecto).\n\n¿Quieres intentar rescatarlas y vincularlas a este proyecto?");
+  const ok = confirm("🔦 Rescate de fotos (Escaneo Profundo)\n\nEsta herramienta buscará en TODA la memoria (metadatos y archivos binarios) fotos que no aparecen en la galería actual.\n\n¿Quieres intentar el rescate profundo y vincularlas a este proyecto?");
   if(!ok) return;
   
   const pid = getActiveProjectId() || ensureProjects().activeId;
   const pName = getActiveProjectName() || "Proyecto Rescatado";
   
   try {
-    const all = await dbGetAll(); // Ahora es ligero, solo meta
-    let rescued = 0;
+    const db = await openDB();
+    const allMetas = await dbGetAll();
+    const metaIds = new Set(allMetas.map(m => m.id));
     
-    for (const it of all){
-      // Si no tiene proyecto o tiene un proyecto distinto al actual
+    let rescuedMetas = 0;
+    let rescuedBlobs = 0;
+
+    // 1. Rescatar metadatos huérfanos o de otros proyectos
+    for (const it of allMetas){
       if (!it.projectId || it.projectId !== pid) {
         it.projectId = pid;
         it.proyecto = pName;
-        await dbPutQ(it); // Guardar cambio de meta
-        rescued++;
+        it.needsSync = true;
+        it.synced = false;
+        await dbPut(it); // Guardado directo fuera de la cola para asegurar rescate
+        rescuedMetas++;
       }
     }
+
+    // 2. Rescate profundo: Buscar blobs que no tienen metadato asociado
+    const allBlobs = await new Promise((resolve, reject) => {
+        const tx = db.transaction(DB_STORE_BLOBS, "readonly");
+        const req = tx.objectStore(DB_STORE_BLOBS).getAllKeys();
+        req.onsuccess = () => resolve(req.result || []);
+        req.onerror = () => reject(req.error);
+    });
+
+    for (const bid of allBlobs) {
+        if (!metaIds.has(bid)) {
+            // Crear metadato de emergencia para recuperar la visibilidad de la foto
+            const it = {
+                id: bid,
+                fecha: hoyISO(),
+                proyecto: pName,
+                projectId: pid,
+                descripcion: "Foto rescatada (sin metadatos)",
+                done: false,
+                mime: "image/jpeg",
+                createdAt: Date.now(),
+                needsSync: true,
+                synced: false
+            };
+            await dbPut(it);
+            rescuedBlobs++;
+        }
+    }
     
-    alert(`✅ ¡Éxito!\n\nSe han rescatado y vinculado ${rescued} fotos a este proyecto.\n\nLa galería se recargará ahora.`);
+    alert(`✅ ¡Rescate completado!\n\n- Metas re-vinculados: ${rescuedMetas}\n- Blobs recuperados: ${rescuedBlobs}\n\nLa galería se recargará ahora.`);
     onProjectChanged();
   } catch(e) {
     alert("Error durante el rescate: " + e.message);
@@ -4393,9 +4428,15 @@ function __enqueueWrite(fn){
   return __dbWriteQ;
 }
 
-async function dbPutQ(item){
-  // v2026-05-04: Soporte para Sincronización Delta
-  if (item) item.updated_at = Date.now();
+async function dbPutQ(item, options = { markNeedsSync: true }){
+  // v2026-05-06: Sincronización Delta automática
+  if (item) {
+    item.updated_at = Date.now();
+    if (options.markNeedsSync) {
+        item.needsSync = true;
+        item.synced = false;
+    }
+  }
   
   const id = item && item.id != null ? item.id : null;
   const t0 = Date.now();
@@ -12208,6 +12249,40 @@ function renderExport(){
         if (typeof render === 'function') render();
       } catch (e) {
         alert('Error: ' + e.message);
+      }
+    };
+
+    window.forceSyncCurrentProject = async function() {
+      const active = (typeof getActiveProject === "function") ? getActiveProject() : null;
+      if (!active) {
+          alert("No hay un proyecto activo seleccionado.");
+          return;
+      }
+      
+      const ok = confirm(`🚀 FORZAR SINCRONIZACIÓN\n\n¿Quieres marcar TODAS las fotos de "${active.name}" como pendientes?\n\nEsto forzará que se vuelvan a enviar a la nube, útil si cambiaste descripciones antes de la actualización.`);
+      if(!ok) return;
+
+      try {
+          const items = await dbGetAll();
+          const activeId = active.id;
+          const activeName = active.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
+          
+          let count = 0;
+          for (let it of items) {
+              const itName = (it.proyecto || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
+              const matches = (it.projectId === activeId || itName === activeName);
+              
+              if (matches) {
+                  it.synced = false;
+                  it.needsSync = true;
+                  await dbPut(it);
+                  count++;
+              }
+          }
+          alert(`✅ Listo. ${count} fotos marcadas para re-sincronizar.\n\nAhora dale al botón de la nube para iniciar el envío.`);
+          if (typeof render === 'function') render();
+      } catch (e) {
+          alert("Error: " + e.message);
       }
     };
 
