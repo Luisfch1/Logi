@@ -73,7 +73,7 @@ window.SupabasePwaSync = (function () {
             const fileName = `${projectId}/${item.id}.jpg`;
             let publicUrl = "";
 
-            // 2. Subir al Storage (SOLO si no está sincronizado aún o si queremos forzar resubida)
+            // 2. Subir al Storage (v2026-05-05: Con lógica de auto-retry para errores 502/transitorios)
             if (!item.synced) {
                 let blob = item.blob;
                 if (!blob && typeof dbGetBlob === 'function') {
@@ -82,34 +82,55 @@ window.SupabasePwaSync = (function () {
 
                 if (!blob) throw new Error("No hay imagen");
 
-                // Asegurar que sea un Blob con el tipo correcto para que no salga octet-stream (v2026-05-03)
                 const imageBlob = new Blob([blob], { type: 'image/jpeg' });
-
                 console.log(`Supabase Bridge: Subiendo binario para ${item.id}...`);
-                let { data: storageData, error: storageError } = await supabaseClient
-                    .storage
-                    .from('logi_evidences')
-                    .upload(fileName, imageBlob, {
-                        contentType: 'image/jpeg',
-                        upsert: true
-                    });
 
-                // Fallback: Si falla porque "ya existe" (a veces el upsert:true falla por RLS), intentamos .update() directamente
-                if (storageError && (storageError.message?.includes('already exist') || storageError.error === 'Duplicate')) {
-                    console.log("Supabase Bridge: El recurso ya existe, intentando actualización directa (.update())...");
-                    const { data: updateData, error: updateError } = await supabaseClient
+                let storageData = null;
+                let storageError = null;
+                let attempts = 0;
+                const MAX_ATTEMPTS = 3;
+
+                while (attempts < MAX_ATTEMPTS) {
+                    attempts++;
+                    const { data, error } = await supabaseClient
                         .storage
                         .from('logi_evidences')
-                        .update(fileName, imageBlob, {
-                            contentType: 'image/jpeg'
+                        .upload(fileName, imageBlob, {
+                            contentType: 'image/jpeg',
+                            upsert: true
                         });
-                    storageData = updateData;
-                    storageError = updateError;
+
+                    storageData = data;
+                    storageError = error;
+
+                    // v2026-05-05: Si no hay error, salimos del bucle
+                    if (!storageError) break;
+
+                    // Fallback: Si falla porque "ya existe" (a veces el upsert:true falla por RLS), intentamos .update() directamente
+                    if (storageError.message?.includes('already exist') || storageError.error === 'Duplicate') {
+                        console.log("Supabase Bridge: El recurso ya existe, intentando actualización directa (.update())...");
+                        const { data: updateData, error: updateError } = await supabaseClient
+                            .storage
+                            .from('logi_evidences')
+                            .update(fileName, imageBlob, {
+                                contentType: 'image/jpeg'
+                            });
+                        storageData = updateData;
+                        storageError = updateError;
+                        if (!storageError) break;
+                    }
+
+                    // Si llegamos aquí y es el último intento, o es un error que no vale la pena reintentar (ej. Acceso Denegado), paramos
+                    if (attempts >= MAX_ATTEMPTS) break;
+                    
+                    // Si es un error de red o servidor (como el 502), esperamos y reintentamos
+                    console.warn(`Supabase Bridge: Error en intento ${attempts}/${MAX_ATTEMPTS}. Reintentando en 1.5s...`, storageError);
+                    await new Promise(r => setTimeout(r, 1500));
                 }
 
                 if (storageError) {
-                    console.error("Supabase Bridge: Error de STORAGE:", storageError);
-                    throw new Error(`Error de Almacenamiento (Storage): ${storageError.message || storageError.error_description || 'Acceso Denegado'}`);
+                    console.error("Supabase Bridge: Error final de STORAGE:", storageError);
+                    throw new Error(`Error de Almacenamiento (Storage): ${storageError.message || storageError.error_description || 'Acceso Denegado (Posible 502)'}`);
                 }
             } else {
                 console.log(`Supabase Bridge: Binario ya existe para ${item.id}, saltando subida a Storage.`);

@@ -2760,20 +2760,8 @@ async function dbGetAll(){
     req.onsuccess = () => resolve(req.result || []);
     req.onerror = () => reject(req.error || tx.error || new Error("dbGetAll_meta_failed"));
   });
-  // Adjuntar blobs (getAll)
-  try{
-    const blobs = await new Promise((resolve, reject) => {
-      const tx = db.transaction(DB_STORE_BLOBS, "readonly");
-      const req = tx.objectStore(DB_STORE_BLOBS).getAll();
-      req.onsuccess = () => resolve(req.result || []);
-      req.onerror = () => reject(req.error || tx.error || new Error("dbGetAll_blob_failed"));
-    });
-    const map = new Map(blobs.map(x => [x.id, x.blob]));
-    for (const m of metas){
-      const b = map.get(m.id);
-      if (b) m.blob = b;
-    }
-  }catch(_){}
+  // No cargamos blobs aquí para evitar OOM (Out of Memory) en dispositivos móviles.
+  // Los blobs se cargarán bajo demanda usando dbGetBlob(id).
   return metas;
 }
 

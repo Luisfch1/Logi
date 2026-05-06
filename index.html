@@ -1355,6 +1355,7 @@ details.detailsCard{
           </div>
 
           <button class="btn btn-secondary" id="btnResetCache" style="width:100%;margin-top:8px">🧰 Reiniciar caché (si se queda pegada)</button>
+          <button class="btn btn-primary" id="btnRescuePhotos" style="width:100%;margin-top:12px;background:linear-gradient(135deg, #f59e0b, #d97706);color:#fff;border:none;font-weight:bold">🔦 Rescatar fotos perdidas</button>
 
           <div class="sheetRow" style="margin-top:10px">
             <div class="sheetRowMain">
@@ -2331,6 +2332,35 @@ async function repairApp(){
   location.replace(base + "?r=" + Date.now());
 }
 $("btnResetCache").onclick = repairApp;
+
+async function rescuePhotos(){
+  const ok = confirm("🔦 Rescate de fotos\n\nEsta herramienta buscará en TODA la memoria del dispositivo fotos que no aparecen en la galería actual (por ejemplo, si se guardaron sin proyecto o en otro proyecto).\n\n¿Quieres intentar rescatarlas y vincularlas a este proyecto?");
+  if(!ok) return;
+  
+  const pid = getActiveProjectId() || ensureProjects().activeId;
+  const pName = getActiveProjectName() || "Proyecto Rescatado";
+  
+  try {
+    const all = await dbGetAll(); // Ahora es ligero, solo meta
+    let rescued = 0;
+    
+    for (const it of all){
+      // Si no tiene proyecto o tiene un proyecto distinto al actual
+      if (!it.projectId || it.projectId !== pid) {
+        it.projectId = pid;
+        it.proyecto = pName;
+        await dbPutQ(it); // Guardar cambio de meta
+        rescued++;
+      }
+    }
+    
+    alert(`✅ ¡Éxito!\n\nSe han rescatado y vinculado ${rescued} fotos a este proyecto.\n\nLa galería se recargará ahora.`);
+    onProjectChanged();
+  } catch(e) {
+    alert("Error durante el rescate: " + e.message);
+  }
+}
+if($("btnRescuePhotos")) $("btnRescuePhotos").onclick = rescuePhotos;
 
 // Caja negra (diagnóstico iOS)
 if ($("btnBlackBoxExport")){
@@ -4259,20 +4289,8 @@ async function dbGetAll(){
     req.onsuccess = () => resolve(req.result || []);
     req.onerror = () => reject(req.error || tx.error || new Error("dbGetAll_meta_failed"));
   });
-  // Adjuntar blobs (getAll)
-  try{
-    const blobs = await new Promise((resolve, reject) => {
-      const tx = db.transaction(DB_STORE_BLOBS, "readonly");
-      const req = tx.objectStore(DB_STORE_BLOBS).getAll();
-      req.onsuccess = () => resolve(req.result || []);
-      req.onerror = () => reject(req.error || tx.error || new Error("dbGetAll_blob_failed"));
-    });
-    const map = new Map(blobs.map(x => [x.id, x.blob]));
-    for (const m of metas){
-      const b = map.get(m.id);
-      if (b) m.blob = b;
-    }
-  }catch(_){}
+  // No cargamos blobs aquí para evitar OOM (Out of Memory) en dispositivos móviles.
+  // Los blobs se cargarán bajo demanda usando dbGetBlob(id).
   return metas;
 }
 
@@ -6823,7 +6841,8 @@ function renderCaptura(){
 
     div.innerHTML = `
       <div class="itemTop">
-        <img class="thumb ${String(item.itemCode||"").trim() ? "" : "thumbMissing"}" src="${thumbUrl}" data-open="${item.id}" alt="foto">
+        <img class="thumb ${String(item.itemCode||"").trim() ? "" : "thumbMissing"} ${!item.blob ? "lazy" : ""}" 
+             src="${thumbUrl}" data-open="${item.id}" data-hydrate="${!item.blob ? '1' : '0'}" alt="foto">
         <div class="grow">
           <div class="mini">
             <span>#${idx+1} · ${item.fecha}</span>
@@ -6864,6 +6883,7 @@ function renderCaptura(){
   });
 
   wireEventsCaptura();
+  hydrateAllVisible();
 }
 
 
@@ -7047,10 +7067,44 @@ function safeObjectUrlFromBlob(blob){
 
 function getThumbSrc(it){
   const nb = normalizePhotoBlob(it);
-  if (!nb) return { src: MISSING_THUMB_DATAURL, missing: true };
+  if (!nb) {
+    // Si no tiene blob, devolvemos el placeholder pero marcamos como "lazy"
+    return { src: "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22160%22%20height%3D%22120%22%20viewBox%3D%220%200%20160%20120%22%3E%3Crect%20width%3D%22160%22%20height%3D%22120%22%20rx%3D%2212%22%20fill%3D%22%230b1220%22/%3E%3Ctext%20x%3D%2280%22%20y%3D%2265%22%20font-size%3D%2212%22%20text-anchor%3D%22middle%22%20fill%3D%22%231e293b%22%3ECARGANDO...%3C/text%3E%3C/svg%3E", missing: false, lazy: true };
+  }
   const src = safeObjectUrlFromBlob(nb);
   if (!src) return { src: MISSING_THUMB_DATAURL, missing: true };
   return { src, missing: false };
+}
+
+async function hydrateImage(img, id){
+  if (!id) return;
+  const it = cache.find(x => x.id === id);
+  if (!it) return;
+  if (it.blob instanceof Blob) return; // Ya tiene el blob
+  
+  try {
+    const blob = await dbGetBlob(id);
+    if (blob) {
+      it.blob = blob;
+      img.src = trackUrl(URL.createObjectURL(blob));
+      img.classList.remove("gThumbNoFile");
+    } else {
+      img.classList.add("gThumbNoFile");
+    }
+  } catch(e) {
+    console.warn("[Logi] Error hidratando imagen", id, e);
+  }
+}
+
+function hydrateAllVisible(){
+  // Hidratar solo las que están en el DOM y marcadas como lazy
+  document.querySelectorAll("img[data-hydrate='1']").forEach(img => {
+    const id = Number(img.dataset.open || img.dataset.id);
+    if (id) {
+      delete img.dataset.hydrate; // evitar doble carga
+      hydrateImage(img, id);
+    }
+  });
 }
 
 function renderGaleria(){
@@ -7108,7 +7162,15 @@ if (!groups.length){
 
   wrap.querySelectorAll("img.gThumb").forEach(img => {
     img.onclick = () => openModal(Number(img.dataset.open));
+    // Si la imagen es lazy, marcarla para hidratación
+    const it = cache.find(x => x.id === Number(img.dataset.open));
+    if (it && !it.blob) {
+      img.dataset.hydrate = "1";
+    }
   });
+  
+  // Hidratación inmediata tras render (podría usarse IntersectionObserver luego)
+  hydrateAllVisible();
 }
 
 /* ===========================
@@ -7125,6 +7187,7 @@ function openModal(id){
 
   const t = getThumbSrc(it);
   $("modalImg").src = t.src;
+  if (t.lazy) hydrateImage($("modalImg"), id);
 
   $("modalTitle").textContent = it.proyecto ? it.proyecto : "Foto";
   $("modalMeta").textContent = `${it.fecha} · ${it.done ? "LISTA" : "PENDIENTE"}${t.missing ? " · ⚠️ sin archivo" : ""}`;
@@ -7338,8 +7401,9 @@ async function ingestPhotos(fileList){
 
   const fecha = fechaInput.value || hoyISO();
   const activeProject = getActiveProject();
+  const activeId = getActiveProjectId() || ensureProjects().activeId;
   const proyecto = activeProject ? activeProject.name : (proyectoInput.value || "").trim();
-  const projectId = activeProject ? activeProject.id : null;
+  const projectId = activeProject ? activeProject.id : activeId;
 
   zipInfo.textContent = `Procesando ${files.length} foto(s)...`;
   for (const file of files){
