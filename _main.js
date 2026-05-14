@@ -5830,6 +5830,7 @@ function computeRangeForTitle(modo, desde, hasta){
 }
 
 async function normalizeToFixedFrameJpg(blob, frameW=1600, frameH=1000, quality=0.9, fit="stretch"){
+  if (!blob) throw new Error("normalizeToFixedFrameJpg: el blob es nulo o indefinido.");
   const bmp = await createImageBitmap(blob);
   const canvas = document.createElement("canvas");
   canvas.width = frameW;
@@ -6290,7 +6291,16 @@ async function buildRegistroFotograficoDocxBuffer(
       return new TableCell({ width: { size: 50, type: WidthType.PERCENTAGE }, borders: gridBorders, children: [new Paragraph("")] });
     }
 
+    if (!it.blob){
+      try{ it.blob = await dbGetBlob(it.id); }catch(e){ console.error("Error loading blob in makeImageCell", e); }
+    }
+    if (!it.blob){
+      // fallback: celda vacía o con texto de error para no colgar el docx
+      return new TableCell({ width: { size: 50, type: WidthType.PERCENTAGE }, borders: gridBorders, children: [new Paragraph("Error: Imagen no encontrada")] });
+    }
+
     const fixedBlob = await normalizeToFixedFrameJpg(it.blob, frameW, frameH, 0.9, fitMode);
+
 
     let finalBlob = fixedBlob;
     if (exportOpts?.applyLogo || exportOpts?.applyStamp || exportOpts?.applyTemplate){
@@ -6700,6 +6710,9 @@ async function buildRegistroFotograficoDocxFromUserTemplateBuffer(selected, titu
         // Imagen
         const baseRid = baseSlotRid[s];
         if (baseRid){
+          if (!it.blob){
+            try{ it.blob = await dbGetBlob(it.id); }catch(e){}
+          }
           if (it.blob){
             const newRid = `rId${++maxRid}`;
             const ext = "jpeg";
@@ -6933,13 +6946,25 @@ shading: { fill: "2F6FED" },
       return new TableCell({
         width: { size: span2 ? 100 : 50, type: WidthType.PERCENTAGE },
         columnSpan: span2 ? 2 : 1,
-children: [ new Paragraph("") ]
+        children: [ new Paragraph("") ]
+      });
+    }
+
+    if (!it.blob){
+      try{ it.blob = await dbGetBlob(it.id); }catch(e){ console.error("Error loading blob in makeImageCell", e); }
+    }
+    if (!it.blob){
+      return new TableCell({
+        width: { size: span2 ? 100 : 50, type: WidthType.PERCENTAGE },
+        columnSpan: span2 ? 2 : 1,
+        children: [ new Paragraph("Error: Imagen no encontrada") ]
       });
     }
 
     const fixedBlob = await normalizeToFixedFrameJpg(it.blob, frameW, frameH, 0.9, fitMode);
 
     let finalBlob = fixedBlob;
+
     if (exportOpts?.applyLogo || exportOpts?.applyStamp || exportOpts?.applyTemplate){
       finalBlob = await applyExportOverlaysToBlob(fixedBlob, {
         addLogo: !!exportOpts.applyLogo,
@@ -7322,7 +7347,11 @@ async function buildTagsTablaDocxBuffer(selected, tituloProyecto, startISO, endI
   let donePhotos = 0;
 
   async function makeImageRun(it){
-    if (!it || !(it.blob instanceof Blob)) return null;
+    if (!it) return null;
+    if (!(it.blob instanceof Blob)){
+      try{ it.blob = await dbGetBlob(it.id); }catch(e){}
+    }
+    if (!(it.blob instanceof Blob)) return null;
 
     let imgBlob = it.blob;
     const wantsTemplate = !!(exportOpts && exportOpts.applyTemplate && (exportOpts.templateId !== "classic") && (exportOpts.templateId !== "clean"));
@@ -7605,155 +7634,188 @@ async function exportZipByMode(modo, desde, hasta){
   if (!window.JSZip){ alert("JSZip no cargó. Abre con internet o en Chrome."); return; }
   if (!window.docx){ alert("La librería DOCX no cargó. Abre con internet o en Chrome."); return; }
 
-  const useTime = !!$("useTimeNames")?.checked;
-  const onlyDone = !!$("onlyDone")?.checked;
+  try{
+    const useTime = !!$("useTimeNames")?.checked;
+    const onlyDone = !!$("onlyDone")?.checked;
 
-  const exportLogo = !!$("exportLogo")?.checked;
-  const exportStampDT = !!$("exportStampDT")?.checked;
-  const exportTemplate = !!$("exportTemplate")?.checked;
-  const templateId = getTemplateId();
+    const exportLogo = !!$("exportLogo")?.checked;
+    const exportStampDT = !!$("exportStampDT")?.checked;
+    const exportTemplate = !!$("exportTemplate")?.checked;
+    const templateId = getTemplateId();
 
     const reportTpl = getSelectedTemplateId();
 
-  let selected = [];
-  if (modo === "dia"){
-    selected = cache.filter(x => x.fecha === desde);
-  } else if (modo === "mes"){
-    const ym = (desde || hoyISO()).slice(0,7);
-    selected = cache.filter(x => (x.fecha || "").startsWith(ym));
-  } else {
-    const a = ymdToNum(desde);
-    const b = ymdToNum(hasta);
-    const lo = Math.min(a,b), hi = Math.max(a,b);
-    selected = cache.filter(x => {
-      const n = ymdToNum(x.fecha);
-      return n >= lo && n <= hi;
-    });
-  }
-
-  const itemFilter = getExportItemCode();
-  if (itemFilter) selected = selected.filter(x => String(x.itemCode || "").trim() === itemFilter);
-
-  if (onlyDone) selected = selected.filter(x => !!x.done);
-
-  if (!selected.length){
-    alert("No hay fotos en ese periodo" + (onlyDone ? " (o ninguna marcada como LISTA)." : "."));
-    return;
-  }
-
-  selected.sort((a,b)=> (a.fecha.localeCompare(b.fecha) || a.createdAt - b.createdAt));
-
-  const proyecto = sanitizeName(proyectoInput.value);
-  let packName =
-    (modo==="dia") ? `${desde}_${proyecto}` :
-    (modo==="mes") ? `${(desde||hoyISO()).slice(0,7)}_${proyecto}` :
-    `${desde}_a_${hasta}_${proyecto}`;
-  const itemTag = itemFilter ? `_ITEM_${sanitizeName(itemFilter)}` : "";
-  if (itemTag) packName = packName + itemTag;
-
-  const zip = new JSZip();
-  const root = zip.folder(packName);
-
-  const perDayCounter = new Map();
-  const manifestRows = [];
-
-  zipInfo.textContent = `Armando ZIP (${selected.length} foto(s))...`;
-
-  for (const it of selected){
-    const folder = root.folder(it.fecha);
-
-    const n = (perDayCounter.get(it.fecha) || 0) + 1;
-    perDayCounter.set(it.fecha, n);
-
-    const filename = filenameForItem(it, n, useTime);
-
-    let outBlob = it.blob;
-        if (exportLogo || exportStampDT || (exportTemplate && (templateId !== "classic") && (templateId !== "clean"))){
-      outBlob = await applyExportOverlaysToBlob(it.blob, {
-        addLogo: exportLogo && !!logoBitmap,
-        addStamp: exportStampDT,
-        stampText: exportStampDT ? formatStampDateTime(it) : "",
-        avoidDoubleLogo: exportLogo && !!it.hasLogo,
-        addTemplate: exportTemplate && (templateId !== "classic") && (templateId !== "clean"),
-        templateLines: (exportTemplate && (templateId !== "classic") && (templateId !== "clean")) ? buildTemplateLines(getTemplateMeta(it), templateId) : [],
-        logoCornerHint: localStorage.getItem("logi_logo_corner") || "br"
+    let selected = [];
+    if (modo === "dia"){
+      selected = cache.filter(x => x.fecha === desde);
+    } else if (modo === "mes"){
+      const ym = (desde || hoyISO()).slice(0,7);
+      selected = cache.filter(x => (x.fecha || "").startsWith(ym));
+    } else {
+      const a = ymdToNum(desde);
+      const b = ymdToNum(hasta);
+      const lo = Math.min(a,b), hi = Math.max(a,b);
+      selected = cache.filter(x => {
+        const n = ymdToNum(x.fecha);
+        return n >= lo && n <= hi;
       });
     }
 
-    folder.file(filename, outBlob);
+    const itemFilter = getExportItemCode();
+    if (itemFilter) selected = selected.filter(x => String(x.itemCode || "").trim() === itemFilter);
 
-    const descText = (it.descripcion || "").trim();
-    folder.file(filename.replace(/\.jpg$/i,".txt"), descText || "");
+    if (onlyDone) selected = selected.filter(x => !!x.done);
 
-    manifestRows.push({
-      fecha: it.fecha,
-      archivo: `${it.fecha}/${filename}`,
-      itemCode: it.itemCode || "",
-      itemDesc: it.itemDesc || "",
-      descripcion: descText,
-      proyecto: it.proyecto || "",
-      done: !!it.done
+    if (!selected.length){
+      alert("No hay fotos en ese periodo" + (onlyDone ? " (o ninguna marcada como LISTA)." : "."));
+      return;
+    }
+
+    selected.sort((a,b)=> (a.fecha.localeCompare(b.fecha) || a.createdAt - b.createdAt));
+
+    // 1. Cargar blobs faltantes de IndexedDB (evita el hang de 0/212)
+    exportStatusSet(`Preparando ${selected.length} fotos…`);
+    let loadedCount = 0;
+    for (const it of selected){
+      if (!it.blob){
+        try{
+          it.blob = await dbGetBlob(it.id);
+        }catch(e){ console.warn("Error cargando blob para", it.id, e); }
+      }
+      loadedCount++;
+      if (loadedCount % 20 === 0){
+        exportStatusSet(`Cargando fotos… ${loadedCount}/${selected.length}`);
+        await new Promise(r => requestAnimationFrame(r));
+      }
+    }
+
+    const proyecto = sanitizeName(proyectoInput.value);
+    let packName =
+      (modo==="dia") ? `${desde}_${proyecto}` :
+      (modo==="mes") ? `${(desde||hoyISO()).slice(0,7)}_${proyecto}` :
+      `${desde}_a_${hasta}_${proyecto}`;
+    const itemTag = itemFilter ? `_ITEM_${sanitizeName(itemFilter)}` : "";
+    if (itemTag) packName = packName + itemTag;
+
+    const zip = new JSZip();
+    const root = zip.folder(packName);
+
+    const perDayCounter = new Map();
+    const manifestRows = [];
+
+    exportStatusSet(`Armando ZIP (${selected.length} foto(s))...`);
+
+    for (const it of selected){
+      const folder = root.folder(it.fecha);
+
+      const n = (perDayCounter.get(it.fecha) || 0) + 1;
+      perDayCounter.set(it.fecha, n);
+
+      const filename = filenameForItem(it, n, useTime);
+
+      let outBlob = it.blob;
+      // Salto si no hay blob
+      if (!outBlob){
+        console.error("Foto omitida por falta de blob:", it.id);
+        continue;
+      }
+
+      if (exportLogo || exportStampDT || (exportTemplate && (templateId !== "classic") && (templateId !== "clean"))){
+        try{
+          outBlob = await applyExportOverlaysToBlob(it.blob, {
+            addLogo: exportLogo && !!logoBitmap,
+            addStamp: exportStampDT,
+            stampText: exportStampDT ? formatStampDateTime(it) : "",
+            avoidDoubleLogo: exportLogo && !!it.hasLogo,
+            addTemplate: exportTemplate && (templateId !== "classic") && (templateId !== "clean"),
+            templateLines: (exportTemplate && (templateId !== "classic") && (templateId !== "clean")) ? buildTemplateLines(getTemplateMeta(it), templateId) : [],
+            logoCornerHint: localStorage.getItem("logi_logo_corner") || "br"
+          });
+        }catch(e){
+          console.error("Error aplicando overlays:", e);
+          outBlob = it.blob; // fallback
+        }
+      }
+
+      folder.file(filename, outBlob);
+
+      const descText = (it.descripcion || "").trim();
+      folder.file(filename.replace(/\.jpg$/i,".txt"), descText || "");
+
+      manifestRows.push({
+        fecha: it.fecha,
+        archivo: `${it.fecha}/${filename}`,
+        itemCode: it.itemCode || "",
+        itemDesc: it.itemDesc || "",
+        descripcion: descText,
+        proyecto: it.proyecto || "",
+        done: !!it.done
+      });
+    }
+
+    root.file("manifest.csv", buildManifestCsv(manifestRows));
+    root.file("manifest.xls", buildManifestXlsHtml(manifestRows));
+    const layoutKey = getLayoutKey();
+    const { imgWcm: IMG_W_CM, imgHcm: IMG_H_CM, pairsPerPage: PAIRS_PER_PAGE } = docxDimsForLayout(layoutKey);
+
+    const { start, end } = computeRangeForTitle(modo, desde, hasta);
+    const activeP = (typeof getActiveProject === "function") ? getActiveProject() : null;
+    const tituloProyecto = ((activeP && activeP.name) ? activeP.name : (proyectoInput.value || "")).trim();
+
+    const zi = zipInfo;
+    const totalDocx = selected.length;
+    const nextPaint = () => new Promise(res => requestAnimationFrame(() => setTimeout(res, 0)));
+
+    if (zi){ zi.textContent = `Generando DOCX... 0/${totalDocx}`; await nextPaint(); }
+
+    const onProgress = async (done, tot) => {
+      if (!zi) return;
+      zi.textContent = `Generando DOCX... ${done}/${tot}`;
+      workModalUpdate(`Generando DOCX... ${done}/${tot}`);
+      await nextPaint();
+    };
+
+    let docxBuffer = null;
+    if (reportTpl === "tags"){
+      docxBuffer = await buildTagsTablaDocxBuffer(
+        selected, tituloProyecto, start, end,
+        { applyLogo: exportLogo && !!logoBitmap, applyStamp: exportStampDT, applyTemplate: exportTemplate, templateId, onProgress }
+      );
+    } else if (reportTpl === "pairs"){
+      docxBuffer = await buildPairsByItemDocxBuffer(
+        selected, tituloProyecto, start, end, IMG_W_CM, IMG_H_CM, PAIRS_PER_PAGE,
+        { applyLogo: exportLogo && !!logoBitmap, applyStamp: exportStampDT, applyTemplate: exportTemplate, templateId, onProgress }
+      );
+    } else {
+      docxBuffer = await buildRegistroFotograficoDocxBuffer(
+        selected, tituloProyecto, start, end, IMG_W_CM, IMG_H_CM, PAIRS_PER_PAGE,
+        { applyLogo: exportLogo && !!logoBitmap, applyStamp: exportStampDT, applyTemplate: exportTemplate, templateId, onProgress }
+      );
+    }
+
+    const itemTag2 = itemFilter ? `_ITEM_${sanitizeName(itemFilter)}` : "";
+    root.file(`Logi_Reporte_${start}_a_${end}${itemTag2}.docx`, docxBuffer);
+
+    const outZipBlob = await zip.generateAsync({ type:"blob" }, (meta) => {
+      exportStatusSet(`Comprimiendo... ${Math.floor(meta.percent)}%`);
     });
+
+    const url = URL.createObjectURL(outZipBlob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = packName + ".zip";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    exportStatusSet("ZIP descargado ✅");
+    setTimeout(()=> exportStatusSet(""), 1800);
+  }catch(e){
+    console.error("Error en exportZipByMode:", e);
+    alert("Hubo un error al exportar:\n" + (e.message || String(e)));
+    workModalHide();
   }
-
-  root.file("manifest.csv", buildManifestCsv(manifestRows));
-  root.file("manifest.xls", buildManifestXlsHtml(manifestRows));
-  const layoutKey = getLayoutKey();
-  const { imgWcm: IMG_W_CM, imgHcm: IMG_H_CM, pairsPerPage: PAIRS_PER_PAGE } = docxDimsForLayout(layoutKey);
-
-  const { start, end } = computeRangeForTitle(modo, desde, hasta);
-  const activeP = (typeof getActiveProject === "function") ? getActiveProject() : null;
-  const tituloProyecto = ((activeP && activeP.name) ? activeP.name : (proyectoInput.value || "")).trim();
-
-  const zi = zipInfo;
-  const totalDocx = selected.length;
-  const nextPaint = () => new Promise(res => requestAnimationFrame(() => setTimeout(res, 0)));
-
-  if (zi){ zi.textContent = `Generando DOCX... 0/${totalDocx}`; await nextPaint(); }
-
-  const onProgress = async (done, tot) => {
-    if (!zi) return;
-    zi.textContent = `Generando DOCX... ${done}/${tot}`;
-    await nextPaint();
-  };
-
-  let docxBuffer = null;
-  if (reportTpl === "tags"){
-    docxBuffer = await buildTagsTablaDocxBuffer(
-      selected, tituloProyecto, start, end,
-      { applyLogo: exportLogo && !!logoBitmap, applyStamp: exportStampDT, applyTemplate: exportTemplate, templateId, onProgress }
-    );
-  } else if (reportTpl === "pairs"){
-    docxBuffer = await buildPairsByItemDocxBuffer(
-      selected, tituloProyecto, start, end, IMG_W_CM, IMG_H_CM, PAIRS_PER_PAGE,
-      { applyLogo: exportLogo && !!logoBitmap, applyStamp: exportStampDT, applyTemplate: exportTemplate, templateId, onProgress }
-    );
-  } else {
-    docxBuffer = await buildRegistroFotograficoDocxBuffer(
-      selected, tituloProyecto, start, end, IMG_W_CM, IMG_H_CM, PAIRS_PER_PAGE,
-      { applyLogo: exportLogo && !!logoBitmap, applyStamp: exportStampDT, applyTemplate: exportTemplate, templateId, onProgress }
-    );
-  }
-
-
-  const itemTag2 = itemFilter ? `_ITEM_${sanitizeName(itemFilter)}` : "";
-  root.file(`Logi_Reporte_${start}_a_${end}${itemTag2}.docx`, docxBuffer);
-
-  const outZipBlob = await zip.generateAsync({ type:"blob" }, (meta) => {
-    zipInfo.textContent = `Comprimiendo... ${Math.floor(meta.percent)}%`;
-  });
-
-  const url = URL.createObjectURL(outZipBlob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = packName + ".zip";
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-
-  zipInfo.textContent = "ZIP descargado ✅";
-  setTimeout(()=> zipInfo.textContent = "", 1800);
 }
 
 /* =========================
@@ -8146,7 +8208,15 @@ async function buildRegistroFotograficoPdfBlob(selected, tituloProyecto, start, 
         const it = selected[idx];
         done++;
 
-        // aplica overlays si están activados (logo/sello/plantilla)
+        if (!it.blob){
+          try{ it.blob = await dbGetBlob(it.id); }catch(e){}
+        }
+        if (!it.blob){
+          console.warn("PDF: skipping photo missing blob", it.id);
+          photoN++;
+          continue;
+        }
+
         let imgBlob = it.blob;
 
         const wantsTemplate = !!(opts.applyTemplate && (opts.templateId !== "classic") && (opts.templateId !== "clean"));
