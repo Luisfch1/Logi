@@ -9376,6 +9376,24 @@ async function exportExpressByMode(modo, desde, hasta, fmt) {
     const activeP = (typeof getActiveProject === "function") ? getActiveProject() : null;
     const tituloProyecto = ((activeP && activeP.name) ? activeP.name : (proyectoInput.value || "")).trim();
 
+    // --- FASE: CARGA DE BLOBS DESDE INDEXEDDB ---
+    // Importante: Si cache[] no tiene los blobs en RAM, hay que traerlos.
+    let loadedCount = 0;
+    workModalUpdate("Cargando fotos…", "Cargando desde base de datos…");
+    for (const it of selected){
+      if (!it.blob){
+        try{
+          it.blob = await dbGetBlob(it.id);
+        }catch(e){ console.warn("Error cargando blob para exportExpressByMode", it.id, e); }
+      }
+      loadedCount++;
+      if (loadedCount % 20 === 0 || loadedCount === selected.length){
+        exportStatusSet(`Cargando fotos… ${loadedCount}/${selected.length}`);
+        workModalUpdate(`Cargando fotos… ${loadedCount}/${selected.length}`);
+        await new Promise(r => requestAnimationFrame(r));
+      }
+    }
+
     if (fmt === "docx") {
       if (reportTpl === "tags") {
         if (!window.docx) {
