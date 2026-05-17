@@ -1001,8 +1001,8 @@ details.detailsCard{
           <div class="appVersion" id="appVersion">v0.1.46</div>
         </div>
       </div>
-      <button class="iconBtn" id="btnCloudSync" aria-label="Sincronizar Cloud" style="margin-right:10px" onclick="window.SupabasePwaSync.syncAll()">
-        <span class="icon">☁️</span>
+      <button class="iconBtn" id="btnOfflineSync" aria-label="Sincronizar con CONTROL" style="margin-right:10px" onclick="exportForControlLchp()" title="Exportar sincronización (.lchp) para CONTROL">
+        <span class="icon">📤</span>
       </button>
       <button class="iconBtn" id="btnSettings" aria-label="Configuración">
         <span class="icon">⚙️</span>
@@ -1271,28 +1271,46 @@ details.detailsCard{
       <div class="sheetBody">
         
         <div class="card">
-          <div class="sectionHeader">Sincronización Nube (CONTROL)</div>
-          <div class="sheetRow">
-            <div class="sheetRowMain">
-              <div class="sheetRowTitle">Supabase URL</div>
-              <input type="text" id="cfgSupabaseUrl" placeholder="https://xxx.supabase.co" style="width:100%; margin-top:5px; background:var(--card); border:1px solid var(--border); color:var(--text); padding:10px; border-radius:12px; font-size:0.9rem;" />
+          <div class="sectionHeader">Sincronización con CONTROL (Desktop)</div>
+          
+          <!-- Botón de Sincronización Directa Offline (Premium) -->
+          <div style="padding: 6px 0 12px 0;">
+            <button class="btn btn-primary" onclick="exportForControlLchp()" style="width:100%; padding:12px; font-weight:bold; background: linear-gradient(135deg, var(--accent), #e28743); color: #020617; box-shadow: var(--glow); border: none; border-radius: 12px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+              <span>📤</span> Exportar Sincronización Directa (.lchp)
+            </button>
+            <div class="muted" style="margin-top:6px; font-size:0.8rem; text-align:center; line-height: 1.3;">
+              Genera un archivo de datos local (.lchp) con tus fotos y descripciones para cargarlo directamente en CONTROL.
             </div>
           </div>
-          <div class="sheetRow">
-            <div class="sheetRowMain">
-              <div class="sheetRowTitle">Anon Key</div>
-              <input type="password" id="cfgSupabaseKey" placeholder="eyJhbGci..." style="width:100%; margin-top:5px; background:var(--card); border:1px solid var(--border); color:var(--text); padding:10px; border-radius:12px; font-size:0.9rem;" />
+          
+          <hr style="border: 0; border-top: 1px solid var(--border); margin: 8px 0 16px 0;" />
+
+          <details class="detailsCard" style="border: 1px solid rgba(255,255,255,0.05); margin-top: 4px;">
+            <summary class="detailsSummary" style="font-size:0.85rem; padding:8px 12px;">Sincronización Nube (Capacitor / Supabase Heredado)</summary>
+            <div style="padding: 10px 0 0 0;">
+              <div class="sheetRow" style="background: transparent !important; padding: 4px 0;">
+                <div class="sheetRowMain">
+                  <div class="sheetRowTitle">Supabase URL</div>
+                  <input type="text" id="cfgSupabaseUrl" placeholder="https://xxx.supabase.co" style="width:100%; margin-top:5px; background:var(--card); border:1px solid var(--border); color:var(--text); padding:10px; border-radius:12px; font-size:0.9rem;" />
+                </div>
+              </div>
+              <div class="sheetRow" style="background: transparent !important; padding: 4px 0;">
+                <div class="sheetRowMain">
+                  <div class="sheetRowTitle">Anon Key</div>
+                  <input type="password" id="cfgSupabaseKey" placeholder="eyJhbGci..." style="width:100%; margin-top:5px; background:var(--card); border:1px solid var(--border); color:var(--text); padding:10px; border-radius:12px; font-size:0.9rem;" />
+                </div>
+              </div>
+              <div class="sheetRow" style="background: transparent !important; padding: 4px 0;">
+                <div class="sheetRowMain">
+                  <div class="sheetRowTitle">ID de Proyecto (CONTROL)</div>
+                  <input type="text" id="cfgSupabaseProjectId" placeholder="404468..." style="width:100%; margin-top:5px; background:var(--card); border:1px solid var(--border); color:var(--text); padding:10px; border-radius:12px; font-size:0.9rem;" />
+                </div>
+              </div>
+              <button class="btn btn-primary" onclick="saveSupabaseConfig()" style="width:100%; margin-top:12px; padding:12px; font-weight:bold;">Guardar Configuración Cloud</button>
+              <button class="btn btn-secondary" onclick="resetCloudSyncStatus()" style="width:100%; margin-top:8px; padding:10px; font-size:0.8rem; opacity:0.8;">🔄 Restablecer marcas de sincronización (Global)</button>
+              <button class="btn btn-secondary" onclick="forceSyncCurrentProject()" style="width:100%; margin-top:8px; padding:10px; font-size:0.8rem; font-weight:bold; color:var(--accent);">🚀 Forzar Re-sincronización del PROYECTO ACTUAL</button>
             </div>
-          </div>
-          <div class="sheetRow">
-            <div class="sheetRowMain">
-              <div class="sheetRowTitle">ID de Proyecto (CONTROL)</div>
-              <input type="text" id="cfgSupabaseProjectId" placeholder="404468..." style="width:100%; margin-top:5px; background:var(--card); border:1px solid var(--border); color:var(--text); padding:10px; border-radius:12px; font-size:0.9rem;" />
-            </div>
-          </div>
-          <button class="btn btn-primary" onclick="saveSupabaseConfig()" style="width:100%; margin-top:12px; padding:12px; font-weight:bold;">Guardar Configuración Cloud</button>
-          <button class="btn btn-secondary" onclick="resetCloudSyncStatus()" style="width:100%; margin-top:8px; padding:10px; font-size:0.8rem; opacity:0.8;">🔄 Restablecer marcas de sincronización (Global)</button>
-          <button class="btn btn-secondary" onclick="forceSyncCurrentProject()" style="width:100%; margin-top:8px; padding:10px; font-size:0.8rem; font-weight:bold; color:var(--accent);">🚀 Forzar Re-sincronización del PROYECTO ACTUAL</button>
+          </details>
         </div>
 
         <div class="card">
@@ -12329,6 +12347,125 @@ function renderExport(){
           if (typeof render === 'function') render();
       } catch (e) {
           alert("Error: " + e.message);
+      }
+    };
+
+    window.exportForControlLchp = async function() {
+      const active = (typeof getActiveProject === "function") ? getActiveProject() : null;
+      if (!active) {
+        alert("Primero crea o selecciona un proyecto activo.");
+        return;
+      }
+
+      if (typeof workModalShow !== "function") {
+        alert("Módulo de interfaz no disponible.");
+        return;
+      }
+
+      workModalShow("Preparando sincronización", "Leyendo base de datos local...");
+
+      try {
+        const allItems = await dbGetAll();
+        const activeId = active.id;
+        const { projects } = ensureProjects();
+        const firstId = projects[0]?.id || activeId;
+        
+        // Filtrar ítems que pertenecen a este proyecto
+        const items = allItems.filter(it => (it.projectId ? it.projectId === activeId : activeId === firstId));
+
+        if (items.length === 0) {
+          alert(`No hay fotos registradas para el proyecto "${active.name}". Captura fotos antes de exportar.`);
+          workModalHide();
+          return;
+        }
+
+        workModalUpdate("Procesando fotos: Cargando 0/" + items.length + " imágenes...");
+
+        const photos = [];
+        const entries = [];
+        let loadedCount = 0;
+
+        for (const it of items) {
+          // Obtener el blob de la imagen
+          let blob = null;
+          try {
+            blob = await dbGetBlob(it.id);
+          } catch (e) {
+            console.error("Error cargando blob para sincronización", it.id, e);
+          }
+
+          let base64Data = "";
+          if (blob) {
+            base64Data = await new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onloadend = () => {
+                const arr = reader.result.split(',');
+                resolve(arr[1] || "");
+              };
+              reader.onerror = reject;
+              reader.readAsDataURL(blob);
+            });
+          }
+
+          // Guardar metadatos en formato LogiEntry de Control
+          entries.push({
+            id: String(it.id),
+            date: it.fecha || new Date().toISOString().split('T')[0],
+            itemCode: String(it.itemCode || "").trim(),
+            description: String(it.descripcion || "").trim(),
+            imageUrl: "",
+            isLocal: true,
+            status: "pending"
+          });
+
+          // Guardar imagen en base64 si existe
+          if (base64Data) {
+            photos.push({
+              id: String(it.id),
+              projectId: activeId,
+              base64Data: base64Data
+            });
+          }
+
+          loadedCount++;
+          if (loadedCount % 10 === 0 || loadedCount === items.length) {
+            workModalUpdate("Procesando fotos: Cargando " + loadedCount + "/" + items.length + " imágenes...");
+            await new Promise(r => requestAnimationFrame(r));
+          }
+        }
+
+        workModalUpdate("Compilando archivo de sincronización .lchp...");
+
+        const backupData = {
+          version: 2,
+          projectId: activeId,
+          projectName: active.name,
+          entries: entries,
+          photos: photos
+        };
+
+        const dataStr = JSON.stringify(backupData, null, 2);
+        const safeName = active.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+        
+        const blobFile = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blobFile);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${safeName}_Sincronizacion_${new Date().toISOString().split('T')[0]}.lchp`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        workModalUpdate("Sincronización lista ✅ (" + items.length + " fotos)");
+        setTimeout(() => {
+          workModalHide();
+        }, 2200);
+
+      } catch (error) {
+        console.error("Error al exportar sincronización:", error);
+        alert("Ocurrió un error al compilar el archivo de sincronización: " + error.message);
+        workModalHide();
       }
     };
 
