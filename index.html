@@ -12385,8 +12385,68 @@ function renderExport(){
         const entries = [];
         let loadedCount = 0;
 
+        const readBlobAsBase64 = function(blob) {
+          return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              const arr = reader.result.split(',');
+              resolve(arr[1] || "");
+            };
+            reader.onerror = () => resolve("");
+            reader.readAsDataURL(blob);
+          });
+        };
+
+        const compressAndGetBase64 = function(blob) {
+          return new Promise((resolve) => {
+            const img = new Image();
+            const objectUrl = URL.createObjectURL(blob);
+            img.onload = () => {
+              URL.revokeObjectURL(objectUrl);
+              const canvas = document.createElement('canvas');
+              let width = img.width;
+              let height = img.height;
+
+              const maxDim = 1200;
+              if (width > maxDim || height > maxDim) {
+                if (width > height) {
+                  height = Math.round((height * maxDim) / width);
+                  width = maxDim;
+                } else {
+                  width = Math.round((width * maxDim) / height);
+                  height = maxDim;
+                }
+              }
+
+              canvas.width = width;
+              canvas.height = height;
+
+              const ctx = canvas.getContext('2d');
+              if (!ctx) {
+                readBlobAsBase64(blob).then(resolve);
+                return;
+              }
+
+              ctx.drawImage(img, 0, 0, width, height);
+              
+              try {
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                const arr = dataUrl.split(',');
+                resolve(arr[1] || "");
+              } catch(e) {
+                console.error("Error al comprimir canvas, usando fallback:", e);
+                readBlobAsBase64(blob).then(resolve);
+              }
+            };
+            img.onerror = () => {
+              URL.revokeObjectURL(objectUrl);
+              readBlobAsBase64(blob).then(resolve);
+            };
+            img.src = objectUrl;
+          });
+        };
+
         for (const it of items) {
-          // Obtener el blob de la imagen
           let blob = null;
           try {
             blob = await dbGetBlob(it.id);
@@ -12396,18 +12456,18 @@ function renderExport(){
 
           let base64Data = "";
           if (blob) {
-            base64Data = await new Promise((resolve, reject) => {
-              const reader = new FileReader();
-              reader.onloadend = () => {
-                const arr = reader.result.split(',');
-                resolve(arr[1] || "");
-              };
-              reader.onerror = reject;
-              reader.readAsDataURL(blob);
-            });
+            try {
+              base64Data = await compressAndGetBase64(blob);
+            } catch (e) {
+              console.error("Error al procesar/comprimir foto:", e);
+              try {
+                base64Data = await readBlobAsBase64(blob);
+              } catch(err) {
+                console.error("Fallback total falló:", err);
+              }
+            }
           }
 
-          // Guardar metadatos en formato LogiEntry de Control
           entries.push({
             id: String(it.id),
             date: it.fecha || new Date().toISOString().split('T')[0],
@@ -12418,7 +12478,6 @@ function renderExport(){
             status: "pending"
           });
 
-          // Guardar imagen en base64 si existe
           if (base64Data) {
             photos.push({
               id: String(it.id),
