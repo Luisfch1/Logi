@@ -953,8 +953,12 @@ async function createBackupZip(){
     i++;
     $("backupStatus").textContent = `Agregando fotos… (${i}/${items.length})`;
     const ext = extFromMime(it.mime || "image/jpeg");
+    let blob = null;
+    try {
+      blob = await dbGetBlob(it.id);
+    } catch(e) {}
     // guardamos por id (merge-friendly)
-    photos.file(`${it.id}.${ext}`, it.blob);
+    photos.file(`${it.id}.${ext}`, blob || it.blob);
   }
 
   // logo (si existe)
@@ -1305,7 +1309,11 @@ async function createBackupZipAll(){
     const pid = it.projectId || firstId;
     const folder = photos.folder(pid);
     const ext = extFromMime(it.mime || "image/jpeg");
-    folder.file(`${it.id}.${ext}`, it.blob);
+    let blob = null;
+    try {
+      blob = await dbGetBlob(it.id);
+    } catch(e) {}
+    folder.file(`${it.id}.${ext}`, blob || it.blob);
     // Evita bloqueos en celulares durante backups grandes
     if (i % 10 === 0) await new Promise(r => setTimeout(r, 0));
   }
